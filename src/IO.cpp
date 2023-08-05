@@ -135,6 +135,8 @@ std::string sectionToString(MPSSection section){
   case MPSSection::RANGES: return "RANGES";
   case MPSSection::BOUNDS: return "BOUNDS";
   case MPSSection::ENDATA: return "ENDATA";
+  case MPSSection::OBJSENSE: return "OBJSENSE";
+  case MPSSection::OBJNAME: return "OBJNAME";
   case MPSSection::UNDEFINED:
   default:
     return "UNDEFINED";
@@ -159,7 +161,7 @@ FreeRowData::FreeRowData() : rhs{0.0}{
 struct MPSReader{
   MPSSection section = MPSSection::UNDEFINED;
   std::size_t lineCount = 0;
-  std::bitset<7> sawSection;
+  std::bitset<9> sawSection;
 
   std::string objectiveRowName;
 
@@ -188,6 +190,10 @@ struct MPSReader{
   bool processRHSLine(const std::string& line, Problem& problem);
   bool processRANGESLine(const std::string& line, Problem& problem);
   bool processBOUNDSLine(const std::string& line, Problem& problem);
+  bool processOBJSENSELine(const std::string& line, Problem& problem);
+  bool processObjsenseWord(const std::string& word, Problem& problem);
+  bool processOBJNAMELine(const std::string& line, Problem& problem);
+
 
   bool addRow(Problem& problem, const std::string& name, char senseChar);
   bool addRange(Problem& problem, const std::string& rowName, const std::string& value );
@@ -228,6 +234,8 @@ std::vector<std::string> splitString(const std::string& string,char delim=' '){
 
   return result;
 }
+
+constexpr std::array<const char*,1> UNSUPPORTED_SECTIONS = {"SOS"};
 bool MPSReader::processNewSection(const std::string& line, Problem &problem) {
   auto words = splitString(line);
   assert(!words.empty());
@@ -241,6 +249,32 @@ bool MPSReader::processNewSection(const std::string& line, Problem &problem) {
       return false;
     }
     return true;
+  }
+
+  if (words[0] == "OBJSENSE") {
+      setNewSection(problem, MPSSection::OBJSENSE);
+      if (words.size() == 2) {
+          if (!processObjsenseWord(words[1], problem)) {
+              return false;
+          }
+      }
+      if (words.size() > 2) {
+          std::cerr << "Unexpected fields in mps file, line: " << lineCount << "\n";
+          return false;
+      }
+      return true;
+  }
+
+  if(words[0] == "OBJNAME"){
+      setNewSection(problem, MPSSection::OBJNAME);
+      if(words.size() == 2){
+          objectiveRowName = words[1];
+      }
+      if (words.size() > 2) {
+          std::cerr << "Unexpected fields in mps file, line: " << lineCount << "\n";
+          return false;
+      }
+      return true;
   }
   if(words[0] == "ROWS"){
     setNewSection(problem,MPSSection::ROWS);
@@ -297,6 +331,12 @@ bool MPSReader::processNewSection(const std::string& line, Problem &problem) {
     }
     return true;
   }
+  for(const auto& name : UNSUPPORTED_SECTIONS){
+      if(words[0] == name){
+          std::cerr<<"Section: "<<name<<" is not yet supported\n";
+          return false;
+      }
+  }
 
   std::cerr<<"Unexpected section name: "<<words[0]<<", line "<<lineCount<<"\n";
   return false;
@@ -310,6 +350,8 @@ bool MPSReader::processSectionLine(const std::string& line, Problem &problem) {
   case MPSSection::RHS: return processRHSLine(line,problem);
   case MPSSection::RANGES: return processRANGESLine(line,problem);
   case MPSSection::BOUNDS: return processBOUNDSLine(line,problem);
+  case MPSSection::OBJSENSE: return processOBJSENSELine(line,problem);
+  case MPSSection::OBJNAME: return processOBJNAMELine(line,problem);
   default:{
     std::cerr<<"Can not process line "<<lineCount<<" in section "<<sectionToString(section)<<"\n";
     return false;
@@ -762,6 +804,41 @@ bool MPSReader::addRange(Problem &problem, const std::string &rowName, const std
   return true;
 }
 
+bool MPSReader::processOBJNAMELine(const std::string &line, Problem &) {
+    auto words = splitString(line);
+    assert(!words.empty());
+    if(words.size() > 2){
+        std::cerr<<"Unexpected fields in mps file, OBJNAME section, line: "<<lineCount<<"\n";
+        return false;
+    }
+    objectiveRowName = words[0];
+    return true;
+}
+
+bool MPSReader::processOBJSENSELine(const std::string &line, Problem &problem) {
+    auto words = splitString(line);
+    assert(!words.empty());
+    if(words.size() > 2){
+        std::cerr<<"Unexpected fields in mps file, OBJSENSE section, line: "<<lineCount<<"\n";
+        return false;
+    }
+
+    return processObjsenseWord(words[0],problem);
+}
+
+bool MPSReader::processObjsenseWord(const std::string &word, Problem &problem) {
+    if(word == "MAX"){
+        problem.sense = ObjSense::MAXIMIZE;
+    }else if(word == "MIN"){
+        problem.sense = ObjSense::MINIMIZE;
+    }
+    else{
+        std::cerr<<"Unexpected input: "<<word<<" in OBJSENSE section, line: "<<lineCount<<"\n";
+        return false;
+    }
+    return true;
+}
+
 std::optional<Problem> problemFromMPSstream(std::istream& stream){
   std::string read;
   MPSReader reader;
@@ -817,6 +894,10 @@ bool problemToStream(const Problem& problem,std::ostream& stream){
   stream << sectionToString(MPSSection::NAME)<< "  "<<problem.name<<"\n";
   if(!stream.good()){
     return false;
+  }
+  if(problem.sense == ObjSense::MAXIMIZE){
+      stream<<sectionToString(MPSSection::OBJSENSE)<<"\n";
+      stream<<"  MAX\n";
   }
 
   //rows section
@@ -950,5 +1031,5 @@ bool problemToStreamCompressed(const Problem& problem, std::ostream& stream){
 }
 bool writeMPSFile(const Problem& problem,const std::filesystem::path& path){
   std::ofstream stream(path);
-  return problemToStream(problem,stream);
+  return problemToStreamCompressed(problem,stream);
 }
