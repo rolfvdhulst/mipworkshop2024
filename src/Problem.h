@@ -10,6 +10,8 @@
 #include <string>
 #include "SparseMatrix.h"
 #include "Shared.h"
+#include "Solution.h"
+#include <optional>
 
 enum class ObjSense{
   MINIMIZE,
@@ -21,6 +23,8 @@ enum class VariableType{
   INTEGER = 2,
   IMPLIED_INTEGER = 3
 };
+class ExternalSolution;
+
 struct Problem {
   Problem();
   void addRow(const std::string& rowName,double rowLHS, double rowRHS);
@@ -30,6 +34,9 @@ struct Problem {
                  VariableType type,
                  double lowerBound,
                  double upperBound);
+
+  std::optional<Solution> convertExternalSolution(const ExternalSolution& solution) const;
+  bool isFeasible(const Solution& solution) const;
 
   index_t numRows;
   index_t numCols;

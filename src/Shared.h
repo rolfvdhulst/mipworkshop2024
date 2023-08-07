@@ -23,9 +23,10 @@ inline bool isFeasEq(double val1, double val2){
 inline bool isFeasIntegral(double value){
   return (value - floor(value + feasTol)) <= feasTol;
 }
-
-void printInstanceString(const std::string& path);
-void printStartString();
-void printEndString();
-
+inline bool isFeasGreaterOrEqual(double value, double other){
+  return value + feasTol >= other;
+}
+inline bool isFeasLessOrEqual(double value, double other){
+  return value-feasTol <= other;
+}
 #endif //MIPWORKSHOP2024_SRC_SHARED_H

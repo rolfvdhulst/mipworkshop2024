@@ -8,12 +8,19 @@ find_package(Boost COMPONENTS iostreams REQUIRED)
 add_library(mipworkshop2024
         src/Problem.cpp
         src/Shared.cpp
-        src/Solution.cpp
+        src/ExternalSolution.cpp
         src/IO.cpp
         src/SparseMatrix.cpp
-        )
+        src/ApplicationShared.cpp
+        src/Solution.cpp
+        src/presolve/PostSolveStack.cpp
+        src/presolve/PresolvingProblem.cpp
+        src/presolve/PresolvingProblem.h
+        src/MatrixSlice.h src/presolve/TUColumnSubmatrix.cpp src/presolve/TUColumnSubmatrix.h src/presolve/IncidenceAddition.cpp src/presolve/IncidenceAddition.h src/Submatrix.cpp src/Submatrix.h)
 target_include_directories(mipworkshop2024
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+
         )
 target_link_libraries(mipworkshop2024
         PUBLIC Boost::iostreams

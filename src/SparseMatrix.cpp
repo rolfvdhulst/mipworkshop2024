@@ -2,7 +2,7 @@
 // Created by rolf on 2-8-23.
 //
 
-#include "mipworkshop2024/SparseMatrix.h"
+#include "SparseMatrix.h"
 #include <cassert>
 
 SparseMatrix::SparseMatrix() : num_cols{0},

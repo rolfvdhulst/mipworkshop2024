@@ -5,11 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <filesystem>
-#include <mipworkshop2024/Shared.h>
-#include <mipworkshop2024/IO.h>
-#include <mipworkshop2024/Problem.h>
-
+#include <mipworkshop2024/ApplicationShared.h>
 
 int main(int argc, char** argv) {
   std::vector<std::string> args(argv,argv+argc);
@@ -21,32 +17,10 @@ int main(int argc, char** argv) {
   const std::string& fileName = args[1];
   const std::string& presolvedFileName = args[2];
   const std::string& postSolveDirectory = args[3];
-  if(!std::filesystem::exists(fileName)){
-    std::cerr<<"Input file: "<<fileName<<" does not exist!\n";
+  bool good = doPresolve(fileName,presolvedFileName,postSolveDirectory);
+  if(!good){
     return EXIT_FAILURE;
   }
-  if(!std::filesystem::exists(postSolveDirectory)){
-    std::cerr<<"Output directory does not yet exist, creating folder at: "<< postSolveDirectory <<"\n";
-    if(!std::filesystem::create_directory(postSolveDirectory)){
-      std::cerr<<"Could not create output directory!\n";
-      return EXIT_FAILURE;
-    }
-  }
-  auto path = std::filesystem::path(fileName);
-  auto problem = readMPSFile(path);
-  if(!problem.has_value()){
-    std::cerr<<"Error during reading file: "<<path<<"\n";
-    return EXIT_FAILURE;
-  }
-  printInstanceString(path);
-
-  //TODO: presolving methods to modify the problem and produce some post solving data
-
-  if(!writeMPSFile(problem.value(),presolvedFileName)){
-    std::cerr<<"Could not write to: "<<presolvedFileName<<"\n";
-    return EXIT_FAILURE;
-  }
-
 
   return EXIT_SUCCESS;
 }

@@ -6,15 +6,15 @@
 #define MIPWORKSHOP2024_SRC_IO_H
 
 #include "Problem.h"
-#include "Solution.h"
+#include "ExternalSolution.h"
 #include <optional>
 #include <fstream>
 #include <filesystem>
 
-bool solToStream(const Solution& solution, std::ostream& stream);
+bool solToStream(const ExternalSolution& solution, std::ostream& stream);
 
-std::optional<Solution> solFromStream(std::istream& stream);
-std::optional<Solution> solFromCompressedStream(std::istream& stream);
+std::optional<ExternalSolution> solFromStream(std::istream& stream);
+std::optional<ExternalSolution> solFromCompressedStream(std::istream& stream);
 
 std::optional<Problem> readMPSFile(const std::filesystem::path& path);
 std::optional<Problem> problemFromMPSstream(std::istream& stream);

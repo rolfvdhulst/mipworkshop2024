@@ -2,14 +2,14 @@
 // Created by rolf on 1-8-23.
 //
 
-#include "mipworkshop2024/IO.h"
+#include "IO.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <iostream>
 #include <bitset>
 
-bool solToStream(const Solution& solution, std::ostream& stream){
+bool solToStream(const ExternalSolution& solution, std::ostream& stream){
   stream <<"=obj= " << std::to_string(solution.objectiveValue);
   if(!stream.good()){
     return false;
@@ -20,8 +20,8 @@ bool solToStream(const Solution& solution, std::ostream& stream){
   return stream.good();
 }
 
-std::optional<Solution> solFromStream(std::istream& stream){
-  Solution solution;
+std::optional<ExternalSolution> solFromStream(std::istream& stream){
+  ExternalSolution solution;
   std::string buffer;
 
   while(!stream.eof()){
@@ -55,11 +55,11 @@ std::optional<Solution> solFromStream(std::istream& stream){
   return solution;
 }
 
-std::optional<Solution> solFromCompressedStream(std::istream& stream){
+std::optional<ExternalSolution> solFromCompressedStream(std::istream& stream){
   boost::iostreams::filtering_istream is;
   is.push(boost::iostreams::gzip_decompressor());
   is.push(stream);
-  Solution solution;
+  ExternalSolution solution;
 
   std::string buffer;
   buffer.reserve(1024);
@@ -848,7 +848,6 @@ std::optional<Problem> problemFromMPSstream(std::istream& stream){
     if(read.ends_with('\r')){
       read.pop_back();
     }
-    std::cout<<read<<"\n";
     ++reader.lineCount;
     if(read.empty() || read.starts_with('*')) continue; //Line is a comment, we ignore it
     if(!read.starts_with(' ')){
