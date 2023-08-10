@@ -2,7 +2,7 @@
 // Created by rolf on 1-8-23.
 //
 
-#include "IO.h"
+#include "mipworkshop2024/IO.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -10,6 +10,7 @@
 #include <bitset>
 
 bool solToStream(const ExternalSolution& solution, std::ostream& stream){
+  stream<<std::setprecision(15);
   stream <<"=obj= " << std::to_string(solution.objectiveValue);
   if(!stream.good()){
     return false;
@@ -93,7 +94,16 @@ std::optional<ExternalSolution> solFromCompressedStream(std::istream& stream){
   }
   return solution;
 }
-
+std::optional<ExternalSolution> readSolFile(const std::filesystem::path& path){
+  std::ifstream stream(path);
+  if(path.extension() == ".gz" && path.stem().extension() == ".sol"){
+    return solFromCompressedStream(stream);
+  }else if(path.extension() == ".sol"){
+    return solFromStream(stream);
+  }
+  std::cerr<<"Path does not have correct extensions!\n";
+  return std::nullopt;
+}
 std::optional<Problem> readMPSFile(const std::filesystem::path& path){
   std::ifstream stream(path);
   if(path.extension() == ".gz" && path.stem().extension() == ".mps"){

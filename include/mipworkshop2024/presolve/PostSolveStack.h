@@ -5,12 +5,15 @@
 #ifndef MIPWORKSHOP2024_SRC_PRESOLVE_POSTSOLVESTACK_H
 #define MIPWORKSHOP2024_SRC_PRESOLVE_POSTSOLVESTACK_H
 
-#include "Shared.h"
-#include "Solution.h"
+#include "mipworkshop2024/Shared.h"
+#include "mipworkshop2024/Solution.h"
 #include <vector>
+#include <variant>
 class PostSolveStack {
 public:
 
+	void totallyUnimodularColumnSubmatrix(const std::vector<index_t>& tu_columns,
+			const std::vector<index_t>& tu_rows, const std::vector<index_t>& fixed_columns);
 private:
 
   /// Indicates that a set of columns forms a TU submatrix.
@@ -26,7 +29,9 @@ private:
     std::vector<index_t> implyingColumns;
     std::vector<index_t> submatColumns;
   };
+  using Reduction = std::variant<TotallyUnimodularColumnSubmatrix>;
 
+  std::vector<Reduction> reductions;
 };
 
 #endif //MIPWORKSHOP2024_SRC_PRESOLVE_POSTSOLVESTACK_H

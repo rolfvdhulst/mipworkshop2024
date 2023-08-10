@@ -1,0 +1,13 @@
+//
+// Created by rolf on 10-8-23.
+//
+
+#ifndef MIPWORKSHOP2024_TUCOLUMNSUBMATRIX_H
+#define MIPWORKSHOP2024_TUCOLUMNSUBMATRIX_H
+
+class TUColumnSubmatrix
+{
+
+};
+
+#endif //MIPWORKSHOP2024_TUCOLUMNSUBMATRIX_H

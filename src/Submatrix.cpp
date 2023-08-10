@@ -3,7 +3,8 @@
 //
 
 #include <numeric>
-#include "Submatrix.h"
+#include <utility>
+#include "mipworkshop2024/Submatrix.h"
 void Submatrix::addRow(index_t row) {
   if(!containsRow[row]){
     rows.push_back(row);
@@ -27,4 +28,20 @@ containsColumn(numOriginalCols,init == INIT_COLS){
     columns.resize(numOriginalRows);
     std::iota(columns.begin(),columns.end(),0);
   }
+}
+Submatrix::Submatrix(std::vector<bool> contains_row, std::vector<bool> contains_col) : containsRow{std::move(contains_row)},
+containsColumn{std::move(contains_col)}
+{
+	for (std::size_t i = 0; i < containsRow.size(); ++i)
+	{
+		if(containsRow[i]){
+			rows.push_back(i);
+		}
+	}
+	for (std::size_t i = 0; i < containsColumn.size(); ++i)
+	{
+		if(containsColumn[i]){
+			columns.push_back(i);
+		}
+	}
 }

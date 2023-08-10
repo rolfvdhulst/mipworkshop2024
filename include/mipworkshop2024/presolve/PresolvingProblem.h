@@ -6,8 +6,8 @@
 #define MIPWORKSHOP2024_SRC_PRESOLVE_PRESOLVINGPROBLEM_H
 
 #include <vector>
-#include "MatrixSlice.h"
-#include "Problem.h"
+#include "mipworkshop2024/MatrixSlice.h"
+#include "mipworkshop2024/Problem.h"
 
 ///A presentation of the problem which is easy to modify
 ///This class contains some 'extra' data which makes it faster to do certain preprocessing steps
@@ -15,6 +15,7 @@ class PresolvingProblem {
 public:
   explicit PresolvingProblem(const Problem& problem);
 
+  [[nodiscard]] Problem toProblem() const;
   [[nodiscard]] MatrixSlice<ListSlice> getColumnVector(index_t col) const;
   [[nodiscard]] MatrixSlice<ListSlice> getRowVector(index_t row) const;
 
@@ -56,6 +57,9 @@ public:
 
   std::vector<bool> rowDeleted; //TODO: fix to a nicer implementation
   std::vector<bool> colDeleted;
+
+  std::size_t numRows;
+  std::size_t numColumns;
 
   //Extra data which is non-crucial but helpful for many of the
 };

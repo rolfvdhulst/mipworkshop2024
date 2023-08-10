@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 option(MIPWORKSHOP2024_BUILD_TESTS "Turn on to compile the tests" ON)
 
 find_package(Boost COMPONENTS iostreams REQUIRED)
+find_package(SCIP REQUIRED)
+
 add_library(mipworkshop2024
         src/Problem.cpp
         src/Shared.cpp
@@ -15,8 +17,12 @@ add_library(mipworkshop2024
         src/Solution.cpp
         src/presolve/PostSolveStack.cpp
         src/presolve/PresolvingProblem.cpp
-        src/presolve/PresolvingProblem.h
-        src/MatrixSlice.h src/presolve/TUColumnSubmatrix.cpp src/presolve/TUColumnSubmatrix.h src/presolve/IncidenceAddition.cpp src/presolve/IncidenceAddition.h src/Submatrix.cpp src/Submatrix.h)
+        src/presolve/IncidenceAddition.cpp
+        src/Submatrix.cpp
+        src/Solve.cpp
+        src/Logging.cpp
+        src/presolve/Presolver.cpp
+        )
 target_include_directories(mipworkshop2024
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
@@ -24,6 +30,7 @@ target_include_directories(mipworkshop2024
         )
 target_link_libraries(mipworkshop2024
         PUBLIC Boost::iostreams
+        PUBLIC ${SCIP_LIBRARIES}
         )
 
 add_subdirectory(apps)

@@ -2,13 +2,13 @@
 // Created by rolf on 2-8-23.
 //
 
-#include "SparseMatrix.h"
-#include <cassert>
+#include "mipworkshop2024/SparseMatrix.h"
 
 SparseMatrix::SparseMatrix() : num_cols{0},
 num_rows{0},primaryStart{0}, format{SparseMatrixFormat::COLUMN_WISE}{
 
 }
+
 index_t SparseMatrix::addPrimary(const std::vector<index_t>& entrySecondary,
                                  const std::vector<double>& entryValues) {
   //TODO: check if move vs copy makes a difference in performance here

@@ -2,9 +2,9 @@
 // Created by rolf on 1-8-23.
 //
 
-#include "Problem.h"
+#include "mipworkshop2024/Problem.h"
 #include <cassert>
-#include "ExternalSolution.h"
+#include "mipworkshop2024/ExternalSolution.h"
 
 void Problem::addRow(const std::string& rowName,
                      double rowLHS, double rowRHS) {
