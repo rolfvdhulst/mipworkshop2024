@@ -707,7 +707,7 @@ void MPSReader::finalizeCOLUMNS(Problem& problem) {
 }
 void MPSReader::flushColumn(Problem &problem) {
   double lb = 0.0;
-  double ub = colIsInteger ? 1.0 : infinity;
+  double ub =  infinity;
   VariableType type = colIsInteger ? VariableType::INTEGER : VariableType::CONTINUOUS;
   problem.addColumn(lastColumn,columnRows,columnValues,type,lb,ub);
   columnRows.clear();
@@ -899,7 +899,7 @@ char rowSenseChar(double lhs, double rhs){
 
 bool problemToStream(const Problem& problem,std::ostream& stream){
   stream <<std::setprecision(15);
-  assert(problem.matrix.format == SparseMatrixFormat::COLUMN_WISE);
+//  assert(problem.matrix.format == SparseMatrixFormat::COLUMN_WISE); //TODO: fix
   stream << sectionToString(MPSSection::NAME)<< "  "<<problem.name<<"\n";
   if(!stream.good()){
     return false;
@@ -912,7 +912,7 @@ bool problemToStream(const Problem& problem,std::ostream& stream){
   //rows section
   stream << sectionToString(MPSSection::ROWS)<<"\n";
   stream <<"  "<<"N"<<"  "<<"obj\n";
-  for(index_t i = 0; i < problem.numRows; ++i){
+  for(index_t i = 0; i < problem.numRows(); ++i){
     stream<<"  "<<rowSenseChar(problem.lhs[i],problem.rhs[i])<<"  "<<problem.rowNames[i]<<"\n";
   }
 
@@ -923,7 +923,7 @@ bool problemToStream(const Problem& problem,std::ostream& stream){
   stream << sectionToString(MPSSection::COLUMNS)<<"\n";
   bool inIntegralSection = false;
   std::size_t integralIndex = 0;
-  for(index_t col = 0; col < problem.numCols; ++col){
+  for(index_t col = 0; col < problem.numCols(); ++col){
     //TODO: write implicit integers as cont or integer vars?, for now we treat as continuous
     if(inIntegralSection &&
     problem.colType[col] == VariableType::CONTINUOUS ||
@@ -940,16 +940,15 @@ bool problemToStream(const Problem& problem,std::ostream& stream){
     }
     const std::string& name = problem.colNames[col];
 
-    index_t nonzeros = problem.matrix.primaryNonzeros(col);
-    const index_t * colRows = problem.matrix.primaryIndices(col);
-    const double * colValues = problem.matrix.primaryValues(col);
-    for(index_t i = 0; i < nonzeros; i+=2){
-      stream<<"  "<<name<<"  "<<problem.rowNames[colRows[i]]<<"  "<<colValues[i];
-      if(i== nonzeros-1){
-        stream<<"\n";
-        break;
-      }
-      stream<<"  "<<problem.rowNames[colRows[i+1]]<<"  "<<colValues[i+1]<<"\n";
+    auto slice = problem.matrix.getPrimaryVector(col);
+    for(auto it = slice.begin(); it != slice.end(); ++it){
+        stream<<"  "<<name<<"  "<<problem.rowNames[it->index()]<<"  "<<it->value();
+        ++it;
+        if(it == slice.end()){
+            stream<<"\n";
+            break;
+        }
+        stream<<"  "<<problem.rowNames[it->index()]<<"  "<<it->value()<<"\n";
     }
     if(problem.obj[col] != 0.0){
       stream<<"  "<<name<<"  obj  "<<problem.obj[col]<<"\n";
@@ -967,7 +966,7 @@ bool problemToStream(const Problem& problem,std::ostream& stream){
   stream<<sectionToString(MPSSection::RHS)<<"\n";
 
   //TODO: writing as two lines might save some filespace
-  for(index_t row = 0; row < problem.numRows; ++row){
+  for(index_t row = 0; row < problem.numRows(); ++row){
     bool lhsInfinite = problem.lhs[row] == -infinity;
     bool rhsInfinite = problem.rhs[row] == infinity;
     //We skip free rows
@@ -983,7 +982,7 @@ bool problemToStream(const Problem& problem,std::ostream& stream){
   }
   std::size_t numWrittenRanges = 0;
   //TODO: inefficient file storing
-  for(index_t row = 0; row < problem.numRows; ++row){
+  for(index_t row = 0; row < problem.numRows(); ++row){
     if(problem.lhs[row] != -infinity && problem.rhs[row] != infinity &&
        problem.lhs[row] != problem.rhs[row]){
       if(numWrittenRanges == 0){
@@ -998,7 +997,7 @@ bool problemToStream(const Problem& problem,std::ostream& stream){
   }
   //TODO: finalize, along with OBJSENSE and OBJNAME sections
   stream<<sectionToString(MPSSection::BOUNDS)<<"\n";
-  for(index_t col = 0; col < problem.numCols; ++col){
+  for(index_t col = 0; col < problem.numCols(); ++col){
     if(problem.colType[col] == VariableType::BINARY ||
         (problem.colType[col] == VariableType::INTEGER &&
         isFeasEq(problem.lb[col],0.0) && isFeasEq(problem.ub[col],1.0))){

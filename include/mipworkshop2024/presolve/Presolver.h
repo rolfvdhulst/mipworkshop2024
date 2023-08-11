@@ -5,19 +5,19 @@
 #ifndef MIPWORKSHOP2024_PRESOLVER_H
 #define MIPWORKSHOP2024_PRESOLVER_H
 
-#include "PresolvingProblem.h"
 #include "PostSolveStack.h"
+#include "mipworkshop2024/Problem.h"
+
 class Presolver
 {
 public:
-	Presolver(const Problem& problem);
-	void doPresolve();
-	[[nodiscard]] Problem presolvedProblem() const;
+	Presolver() = default;
+	void doPresolve(const Problem& problem);
+	[[nodiscard]] const Problem& presolvedProblem() const;
 	[[nodiscard]] const PostSolveStack& postSolveStack() const;
 private:
-
-	void findTUColumnSubmatrix();
-	PresolvingProblem problem;
+    void findTUColumnSubmatrix();
+	Problem problem;
 	PostSolveStack stack;
 };
 

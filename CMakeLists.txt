@@ -16,12 +16,13 @@ add_library(mipworkshop2024
         src/ApplicationShared.cpp
         src/Solution.cpp
         src/presolve/PostSolveStack.cpp
-        src/presolve/PresolvingProblem.cpp
+#        src/presolve/PresolvingProblem.cpp
         src/presolve/IncidenceAddition.cpp
         src/Submatrix.cpp
         src/Solve.cpp
         src/Logging.cpp
         src/presolve/Presolver.cpp
+        src/presolve/TUColumnSubmatrix.cpp
         )
 target_include_directories(mipworkshop2024
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

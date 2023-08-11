@@ -27,6 +27,10 @@ class ExternalSolution;
 
 struct Problem {
   Problem();
+
+  std::size_t numRows() const;
+  std::size_t numCols() const;
+
   void addRow(const std::string& rowName,double rowLHS, double rowRHS);
   void addColumn(const std::string &colName,
                  const std::vector<index_t>& entryRows,
@@ -38,8 +42,6 @@ struct Problem {
   std::optional<Solution> convertExternalSolution(const ExternalSolution& solution) const;
   bool isFeasible(const Solution& solution) const;
 
-  index_t numRows;
-  index_t numCols;
 
   SparseMatrix matrix;
   //TODO: rename below so that col/row attribution is clearer

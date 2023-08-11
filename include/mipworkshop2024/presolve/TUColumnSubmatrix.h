@@ -5,8 +5,10 @@
 #ifndef MIPWORKSHOP2024_TUCOLUMNSUBMATRIX_H
 #define MIPWORKSHOP2024_TUCOLUMNSUBMATRIX_H
 
-class TUColumnSubmatrix
+#include "mipworkshop2024/Problem.h"
+class TUColumnSubmatrixFinder
 {
+    Problem problem;
 
 };
 

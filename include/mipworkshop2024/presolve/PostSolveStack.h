@@ -14,6 +14,7 @@ public:
 
 	void totallyUnimodularColumnSubmatrix(const std::vector<index_t>& tu_columns,
 			const std::vector<index_t>& tu_rows, const std::vector<index_t>& fixed_columns);
+    [[nodiscard]] bool totallyUnimodularColumnSubmatrixFound() const;
 private:
 
   /// Indicates that a set of columns forms a TU submatrix.
@@ -32,6 +33,8 @@ private:
   using Reduction = std::variant<TotallyUnimodularColumnSubmatrix>;
 
   std::vector<Reduction> reductions;
+
+  bool containsTUSubmatrix = false;
 };
 
 #endif //MIPWORKSHOP2024_SRC_PRESOLVE_POSTSOLVESTACK_H

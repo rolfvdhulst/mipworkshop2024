@@ -13,4 +13,9 @@ void PostSolveStack::totallyUnimodularColumnSubmatrix(
 			.implyingColumns = fixed_columns,
 			.submatColumns = tu_columns,
 	});
+    containsTUSubmatrix = true;
+}
+
+bool PostSolveStack::totallyUnimodularColumnSubmatrixFound() const {
+    return containsTUSubmatrix;
 }

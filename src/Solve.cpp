@@ -38,7 +38,7 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
   SCIP_CALL(SCIPsetObjsense(scip,sense));
 
   std::vector<SCIP_VAR*> vars;
-  for (int i = 0; i < problem.numCols; ++i) {
+  for (int i = 0; i < problem.numCols(); ++i) {
     SCIP_VAR* var;
     SCIP_VARTYPE type;
     switch(problem.colType[i]){
@@ -60,21 +60,17 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
   std::vector<SCIP_CONS *> constraints;
   //TODO: temporary solution for initializing the constraints...
   {
-    std::vector<std::vector<index_t>> consCols(problem.numRows, std::vector<index_t>());
-    std::vector<std::vector<double>> consValues(problem.numRows, std::vector<double>());
+    std::vector<std::vector<index_t>> consCols(problem.numRows(), std::vector<index_t>());
+    std::vector<std::vector<double>> consValues(problem.numRows(), std::vector<double>());
 
-    for (index_t i = 0; i < problem.numCols; ++i) {
-      const index_t *colRows = problem.matrix.primaryIndices(i);
-      const double *values = problem.matrix.primaryValues(i);
-      index_t nonzeros = problem.matrix.primaryNonzeros(i);
-      for (index_t j = 0; j < nonzeros; ++j) {
-        index_t row = colRows[j];
-        consCols[row].push_back(i);
-        consValues[row].push_back(values[j]);
-      }
+    for (index_t i = 0; i < problem.numCols(); ++i) {
+        for(const Nonzero& nonzero : problem.matrix.getPrimaryVector(i)){
+            consCols[nonzero.index()].push_back(i);
+            consValues[nonzero.index()].push_back(nonzero.value());
+        }
     }
     std::vector<SCIP_VAR *> varBuffer;
-    for (int i = 0; i < problem.numRows; ++i) {
+    for (int i = 0; i < problem.numRows(); ++i) {
       SCIP_CONS *cons;
       varBuffer.clear();
       for (auto &index : consCols[i]) {
@@ -105,12 +101,14 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
 
   auto& solution = result.solution;
   SCIP_SOL * sol = SCIPgetBestSol(scip);
-  solution.objectiveValue = SCIPsolGetOrigObj(sol);
-  int nVars = SCIPgetNOrigVars(scip);
-  for (int i = 0; i < nVars; ++i) {
-    const char * name = SCIPvarGetName(vars[i]);
-    double value = SCIPgetSolVal(scip,sol,vars[i]);
-    solution.variableValues[name] = value;
+  if(sol != NULL) {
+      solution.objectiveValue = SCIPsolGetOrigObj(sol);
+      int nVars = SCIPgetNOrigVars(scip);
+      for (int i = 0; i < nVars; ++i) {
+          const char *name = SCIPvarGetName(vars[i]);
+          double value = SCIPgetSolVal(scip, sol, vars[i]);
+          solution.variableValues[name] = value;
+      }
   }
 
   for(SCIP_VAR *  var : vars){

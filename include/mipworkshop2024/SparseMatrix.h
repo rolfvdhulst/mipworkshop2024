@@ -18,10 +18,17 @@ class SparseMatrix{
 public:
   SparseMatrix();
 
-  void setNumSecondary(index_t num);
+  [[nodiscard]] index_t numRows() const{
+      return num_rows;
+  }
+  [[nodiscard]] index_t numCols() const{
+      return num_cols;
+  }
+
+  void setNumSecondary(index_t numSecondary);
 
   template<typename StorageType>
-  index_t addPrimary(const MatrixSlice<StorageType>& slice){
+  index_t addPrimaryVector(const MatrixSlice<StorageType>& slice){
 	  //TODO: check if sorted and if no double coefficients
 #ifndef NDEBUG
 	  for(const Nonzero& entry : slice){
@@ -49,13 +56,14 @@ public:
 	  primaryStart.push_back(primaryStart.back() + numEntries);
 	  return primary;
   }
-  index_t addPrimary(const std::vector<index_t>& secondaryEntries,
+  index_t addPrimaryVector(const std::vector<index_t>& secondaryEntries,
                      const std::vector<double>& values);
 
-  [[nodiscard]] const index_t * primaryIndices(index_t index) const;
-  [[nodiscard]] index_t  primaryNonzeros(index_t index) const;
-  [[nodiscard]] const double * primaryValues(index_t index) const;
+  [[nodiscard]] MatrixSlice<CompressedSlice> getPrimaryVector(index_t index) const;
 
+  [[nodiscard]] SparseMatrix transposedFormat() const;
+
+private:
   SparseMatrixFormat format;
   index_t num_rows;
   index_t num_cols;
