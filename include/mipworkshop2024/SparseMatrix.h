@@ -63,6 +63,10 @@ public:
 
   [[nodiscard]] SparseMatrix transposedFormat() const;
 
+  [[nodiscard]] index_t numSecondarySliceEntries(index_t primary) const{
+	  return primaryStart[primary+1] - primaryStart[primary];
+  }
+
 private:
   SparseMatrixFormat format;
   index_t num_rows;

@@ -9,13 +9,18 @@
 #include "mipworkshop2024/Solution.h"
 #include <vector>
 #include <variant>
+
+struct TotallyUnimodularColumnSubmatrix{
+	std::vector<index_t> submatRows;
+	std::vector<index_t> implyingColumns;
+	std::vector<index_t> submatColumns;
+};
+
 class PostSolveStack {
 public:
 
-	void totallyUnimodularColumnSubmatrix(const std::vector<index_t>& tu_columns,
-			const std::vector<index_t>& tu_rows, const std::vector<index_t>& fixed_columns);
+	void totallyUnimodularColumnSubmatrix(const TotallyUnimodularColumnSubmatrix& submatrix);
     [[nodiscard]] bool totallyUnimodularColumnSubmatrixFound() const;
-private:
 
   /// Indicates that a set of columns forms a TU submatrix.
   /// This means that if we are given a solution to the problem with all implyingColumns (which are necessarily integer),
@@ -25,14 +30,9 @@ private:
 
   /// Although the solver will often find the integral values already, sometimes it will fail to find the integral solution,
   /// due to the addition cutting planes which ruin the integrality during the solving process
-  struct TotallyUnimodularColumnSubmatrix{
-    std::vector<index_t> submatRows;
-    std::vector<index_t> implyingColumns;
-    std::vector<index_t> submatColumns;
-  };
-  using Reduction = std::variant<TotallyUnimodularColumnSubmatrix>;
 
-  std::vector<Reduction> reductions;
+
+  std::vector<TotallyUnimodularColumnSubmatrix> reductions;
 
   bool containsTUSubmatrix = false;
 };

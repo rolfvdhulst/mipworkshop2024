@@ -12,6 +12,7 @@ using index_t = std::size_t;
 static constexpr index_t INVALID = std::numeric_limits<std::size_t>::max();
 
 constexpr double infinity = 1e100;
+constexpr double sumFeasTol = 1e-5;
 constexpr double feasTol = 1e-8;
 
 inline bool isInfinite(double value){
@@ -28,5 +29,12 @@ inline bool isFeasGreaterOrEqual(double value, double other){
 }
 inline bool isFeasLessOrEqual(double value, double other){
   return value-feasTol <= other;
+}
+
+inline bool isFeasGreaterOrEqualSum(double value, double other){
+  return value + sumFeasTol >= other;
+}
+inline bool isFeasLessOrEqualSum(double value, double other){
+  return value-sumFeasTol <= other;
 }
 #endif //MIPWORKSHOP2024_SRC_SHARED_H

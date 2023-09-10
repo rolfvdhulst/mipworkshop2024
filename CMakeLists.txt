@@ -4,6 +4,8 @@ project(mipworkshop2024)
 set(CMAKE_CXX_STANDARD 20)
 option(MIPWORKSHOP2024_BUILD_TESTS "Turn on to compile the tests" ON)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
+
 find_package(Boost COMPONENTS iostreams REQUIRED)
 find_package(SCIP REQUIRED)
 

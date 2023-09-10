@@ -107,4 +107,23 @@ int IncidenceAddition::mergeRepresentatives(int first, int second, int sign)
 	}
 	return first;
 }
+void IncidenceAddition::removeComponent(const std::vector<index_t>& rows, const std::vector<index_t>& columns)
+{
+	const auto& sparseEntries = transposed ? rows : columns;
+	const auto& denseEntries = transposed ? columns : rows;
+	for (index_t entry : sparseEntries)
+	{
+		if (!containsSparse[entry]) continue;
+
+		sparseDimInfo[entry].lastDimRow = -1;
+		sparseDimInfo[entry].lastDimSign = 0;
+		sparseDimNumNonzeros[entry] = 0;
+		containsSparse[entry] = false;
+	}
+
+	for(index_t entry : denseEntries){
+		unionFind[entry] = UnionFindInfo{.edgeSign = 1, .representative = -1};
+		containsDense[entry] = false;
+	}
+}
 

@@ -12,7 +12,7 @@ struct ProblemLogData {
   std::optional<SolveStatistics> presolvedStatistics;
   std::optional<SolveStatistics> baseLineStatistics;
 
-  nlohmann::json toJson() const;
+  [[nodiscard]] nlohmann::json toJson() const;
   static ProblemLogData fromJson(const nlohmann::json& json);
 };
 

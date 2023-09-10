@@ -56,10 +56,10 @@ bool Problem::isFeasible(const Solution &solution) const{
       }
   }
   for(index_t i = 0; i < numRows(); ++i){
-    if(lhs[i] != -infinity && !isFeasGreaterOrEqual(rowActivity[i],lhs[i])){
+    if(lhs[i] != -infinity && !isFeasGreaterOrEqualSum(rowActivity[i],lhs[i])){
       return false;
     }
-    if(rhs[i] != infinity && !isFeasLessOrEqual(rowActivity[i],rhs[i])){
+    if(rhs[i] != infinity && !isFeasLessOrEqualSum(rowActivity[i],rhs[i])){
       return false;
     }
   }
@@ -83,4 +83,24 @@ std::size_t Problem::numRows() const {
 
 std::size_t Problem::numCols() const {
     return matrix.numCols();
+}
+double Problem::computeObjective(const Solution& solution) const
+{
+	assert(solution.values.size() == obj.size());
+	double sum = objectiveOffset;
+	for(index_t i = 0; i < solution.values.size(); ++i){
+		sum += solution.values[i] * obj[i];
+	}
+	return sum;
+}
+ExternalSolution Problem::convertSolution(const Solution& solution) const
+{
+	ExternalSolution externalSol;
+	externalSol.objectiveValue = computeObjective(solution);
+
+	assert(solution.values.size() == numCols());
+	for(index_t i = 0; i < solution.values.size(); ++i){
+		externalSol.variableValues[colNames[i]] = solution.values[i];
+	}
+	return externalSol;
 }

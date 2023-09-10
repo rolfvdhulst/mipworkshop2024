@@ -26,6 +26,16 @@ private:
   const double * entryValue;
 };
 
+struct EmptySlice;
+
+template<>
+class MatrixSlice<EmptySlice> {
+public:
+	using iterator = const Nonzero*;
+	static constexpr iterator begin() { return nullptr;}
+	static constexpr iterator end() { return nullptr;}
+};
+
 
 /// Use CompressedSlice to iterate over two of values and indices, as happens in standard CSC/CSR format
 struct CompressedSlice;

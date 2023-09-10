@@ -92,6 +92,7 @@ private:
 				containsSparse[index] = true;
 				sparseDimInfo[index].lastDimRow = entryIndex;
 				sparseDimInfo[index].lastDimSign = entrySign;
+				return true;
 			}
 			return false;
 		}
@@ -118,7 +119,7 @@ private:
 			if (!containsSparse[secondary]) continue;
 			if (fabs(nonzero.value()) != 1.0) return false; //TODO; tolerance; yes/no?
 			if (sparseDimNumNonzeros[secondary] >= 2) return false;
-			assert((sparseDimNumNonzeros[secondary] = 0) == (sparseDimInfo[secondary].lastDimRow == -1));
+			assert((sparseDimNumNonzeros[secondary] == 0) == (sparseDimInfo[secondary].lastDimRow == -1));
 			int componentPrimary = sparseDimInfo[secondary].lastDimRow;
 			if (componentPrimary != -1)
 			{
@@ -147,7 +148,7 @@ private:
 
 		for (int representative : componentRepresentatives)
 		{
-			assert(components[representative].numUnreflected > 0 || components[representative].numUnreflected > 0);
+			assert(components[representative].numUnreflected > 0 || components[representative].numReflected > 0);
 			if (components[representative].numUnreflected > 0 && components[representative].numReflected > 0)
 			{
 				return false;
@@ -212,14 +213,23 @@ public:
 	{
 		if (transposed)
 		{
-			return tryAddDense(row, rowSlice);
+			return tryAddSparse(row, rowSlice);
 		}
 		else
 		{
-			return tryAddSparse(row, rowSlice);
+			return tryAddDense(row, rowSlice);
 		}
 	}
 
+	[[nodiscard]] bool containsColumn(index_t col) const {
+		return transposed ? containsDense[col] : containsSparse[col];
+	}
+
+	[[nodiscard]] bool containsRow(index_t row) const {
+		return transposed ? containsSparse[row] : containsDense[row];
+	}
+	//Hacky method to remove. Assumes that the given rows/columns form one connected component in the current decomposition
+	void removeComponent(const std::vector<index_t>& rows, const std::vector<index_t>& columns);
 	[[nodiscard]] Submatrix createSubmatrix() const;
 
 };

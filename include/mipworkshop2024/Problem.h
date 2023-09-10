@@ -40,7 +40,9 @@ struct Problem {
                  double upperBound);
 
   std::optional<Solution> convertExternalSolution(const ExternalSolution& solution) const;
+  ExternalSolution convertSolution(const Solution& solution) const;
   bool isFeasible(const Solution& solution) const;
+  double computeObjective(const Solution& solution) const;
 
 
   SparseMatrix matrix;

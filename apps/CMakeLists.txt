@@ -14,3 +14,11 @@ target_link_libraries(runSCIP
 add_executable(runIntegratedSCIP runIntegratedSCIP.cpp)
 target_link_libraries(runIntegratedSCIP
         PUBLIC mipworkshop2024)
+
+add_executable(mpsConvert mpsConvert.cpp)
+target_link_libraries(mpsConvert
+        PUBLIC mipworkshop2024)
+
+add_executable(checkSolutions CheckSolutions.cpp)
+target_link_libraries(checkSolutions
+        PUBLIC mipworkshop2024)
