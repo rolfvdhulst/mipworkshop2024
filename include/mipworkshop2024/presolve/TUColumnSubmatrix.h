@@ -48,6 +48,12 @@ private:
 			const std::vector<long>& nRowEntries,
 			const std::vector<long>& nColEntries,
 			const std::vector<long>& rowComponents) const;
+    [[nodiscard]] Submatrix computeNetworkSubmatrix(
+            bool transposed,
+            const std::vector<Component>& components,
+            const std::vector<bool>& componentValid,
+            const std::vector<long>& rowComponents);
+
 	[[nodiscard]] MatrixSlice<CompressedSlice> getRowVector(index_t index) const;
 	[[nodiscard]] MatrixSlice<CompressedSlice> getColumnVector(index_t index) const;
 

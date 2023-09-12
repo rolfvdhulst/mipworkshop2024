@@ -6,6 +6,7 @@
 #include <iostream>
 #include "mipworkshop2024/presolve/TUColumnSubmatrix.h"
 #include "mipworkshop2024/presolve/IncidenceAddition.h"
+#include "mipworkshop2024/presolve/NetworkAddition.hpp"
 
 struct TUColumnSubmatrixFinder;
 TUColumnSubmatrixFinder::TUColumnSubmatrixFinder(Problem& problem)
@@ -564,3 +565,12 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 	return submatrix;
 }
 
+Submatrix TUColumnSubmatrixFinder::computeNetworkSubmatrix(bool transposed,
+                                                           const std::vector<Component> &components,
+                                                           const std::vector<bool> &componentValid,
+                                                           const std::vector<long> &rowComponents) {
+    GraphicAddition addition(problem.numRows(),problem.numCols(),Submatrix::INIT_NONE,transposed);
+
+
+    return Submatrix();
+}
