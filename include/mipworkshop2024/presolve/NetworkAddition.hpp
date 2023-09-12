@@ -10,7 +10,17 @@
 #include "SPQRDecomposition.h"
 #include "SPQRRowAddition.h"
 #include "SPQRColumnAddition.h"
+#include <stdexcept>
 
+// a macro that throws if the output is not okay somehow
+#define SPQR_CALL_THROW(x) \
+   do                                                                                                   \
+   {                                                                                                    \
+      SPQR_ERROR throw_retcode;                                                                       \
+      if( ((throw_retcode) = (x)) != SPQR_OKAY )                                                        \
+         throw std::logic_error("Error <" + std::to_string((long long)throw_retcode) + "> in function call"); \
+   }                                                                                                    \
+   while( false )
 class GraphicAddition {
 private:
     SPQR * env;
@@ -19,17 +29,40 @@ private:
     SPQRNewColumn * colAdd;
 
     bool transposed;
+    std::vector<index_t> sliceBuffer;
 
     template<typename Storage>
     bool tryAddNetworkRow(index_t index, const MatrixSlice<Storage>& slice)
     {
-        return true;
+        sliceBuffer.clear();
+        for(const auto& nonzero : slice){
+            if(decompositionHasCol(dec,nonzero.index())){
+                sliceBuffer.push_back(nonzero.index());
+            }
+        }
+        SPQR_CALL_THROW(checkNewRow(dec,rowAdd,index,sliceBuffer.data(),sliceBuffer.size()));
+        if(rowAdditionRemainsGraphic(rowAdd)){
+            SPQR_CALL_THROW(addNewRow(dec,rowAdd));
+            return true;
+        }
+        return false;
     }
 
     template<typename Storage>
     bool tryAddNetworkCol(index_t index, const MatrixSlice<Storage>& slice)
     {
-        return true;
+        sliceBuffer.clear();
+        for(const auto& nonzero : slice){
+            if(decompositionHasRow(dec,nonzero.index())){
+                sliceBuffer.push_back(nonzero.index());
+            }
+        }
+        SPQR_CALL_THROW(checkNewColumn(dec,colAdd,index,sliceBuffer.data(),sliceBuffer.size()));
+        if(columnAdditionRemainsGraphic(colAdd)){
+            SPQR_CALL_THROW(addNewColumn(dec,colAdd));
+            return true;
+        }
+        return false;
     }
 
 

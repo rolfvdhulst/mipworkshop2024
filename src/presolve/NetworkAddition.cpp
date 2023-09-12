@@ -3,17 +3,6 @@
 //
 
 #include "mipworkshop2024/presolve/NetworkAddition.hpp"
-#include <stdexcept>
-
-// a macro that throws if the output is not okay somehow
-#define SPQR_CALL_THROW(x) \
-   do                                                                                                   \
-   {                                                                                                    \
-      SPQR_ERROR throw_retcode;                                                                       \
-      if( ((throw_retcode) = (x)) != SPQR_OKAY )                                                        \
-         throw std::logic_error("Error <" + std::to_string((long long)throw_retcode) + "> in function call"); \
-   }                                                                                                    \
-   while( false )
 
 
 GraphicAddition::GraphicAddition(index_t numRows, index_t numCols, Submatrix::Initialization init, bool transposed) {
@@ -39,4 +28,12 @@ bool GraphicAddition::containsColumn(index_t col) const {
 }
 bool GraphicAddition::containsRow(index_t row) const {
     return transposed ? decompositionHasCol(dec,row) : decompositionHasRow(dec,row);
+}
+
+Submatrix GraphicAddition::createSubmatrix() const {
+    Submatrix submatrix;
+
+    //TODO:
+
+    return submatrix;
 }
