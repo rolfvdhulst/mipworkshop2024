@@ -1,5 +1,5 @@
 #!/bin/bash
-input="$PWD/data/benchmark.test"
+input="$PWD/data/first_round.test"
 
 N=6
 while IFS= read -r line

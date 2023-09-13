@@ -326,7 +326,9 @@ std::vector<TotallyUnimodularColumnSubmatrix> TUColumnSubmatrixFinder::mixedComp
 		Submatrix submatrix = computeIncidenceSubmatrix(transposed,components,componentValid,
 				cSubMatRowEntries,cSubMatColEntries,rowComponent);
 		submatrices.push_back(submatrix);
+		submatrices.push_back(computeNetworkSubmatrix(transposed,components,componentValid,rowComponent));
 	}
+
 	auto& bestSubmatrix =  submatrices[1].columns.size() > submatrices[0].columns.size() ? submatrices[1] : submatrices[0];
 	if(bestSubmatrix.columns.empty()){
 		return {};
@@ -570,7 +572,36 @@ Submatrix TUColumnSubmatrixFinder::computeNetworkSubmatrix(bool transposed,
                                                            const std::vector<bool> &componentValid,
                                                            const std::vector<long> &rowComponents) {
     GraphicAddition addition(problem.numRows(),problem.numCols(),Submatrix::INIT_NONE,transposed);
+	std::vector<index_t> invalidComponents;
+	std::vector<index_t> validComponents;
+	for(std::size_t i = 0; i < components.size(); ++i){
+		if(!componentValid[i])
+		{
+			invalidComponents.push_back(i);
+			continue;
+		}
+		auto& component = components[i];
 
+		for(index_t row : component.rows){
+			bool added = addition.tryAddRow(row, MatrixSlice<EmptySlice>());
+			assert(added);
+		}
+		bool good = true;
+		for(index_t col : component.cols){
+			if (!addition.tryAddCol(col, getColumnVector(col)))
+			{
+				good = false;
+				break;
+			}
+		}
+		if(good){
+			validComponents.push_back(i);
 
-    return Submatrix();
+		}else{
+			invalidComponents.push_back(i);
+			addition.removeComponent(component.rows,component.cols);
+		}
+	}
+
+    return addition.createSubmatrix();
 }

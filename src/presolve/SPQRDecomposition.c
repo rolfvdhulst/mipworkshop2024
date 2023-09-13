@@ -392,7 +392,6 @@ edge_id getDecompositionRowEdge(const Decomposition *dec, row_idx row){
 SPQR_ERROR createDecomposition(SPQR *env, Decomposition **pDecomposition, int numRows, int numColumns) {
     assert(env);
     assert(pDecomposition);
-    assert(!*pDecomposition);
 
     SPQR_CALL(SPQRallocBlock(env, pDecomposition));
     Decomposition *dec = *pDecomposition;
@@ -882,7 +881,8 @@ SPQR_ERROR createConnectedParallel(Decomposition *dec, col_idx * columns, int nu
 
 SPQR_ERROR createStandaloneSeries(Decomposition *dec, row_idx * rows, int numRows, col_idx col, member_id * pMember){
     member_id member;
-    SPQR_CALL(createMember(dec,SERIES,&member));
+	MemberType type = numRows <= 1 ? LOOP : SERIES;
+    SPQR_CALL(createMember(dec,type,&member));
 
     edge_id colEdge;
     SPQR_CALL(createColumnEdge(dec,member,&colEdge,col));
@@ -1343,7 +1343,7 @@ void changeLoopToSeries(Decomposition * dec, member_id member){
     assert(memberIsValid(member));
     assert(member < dec->memMembers);
     assert(dec);
-    assert((getMemberType(dec,member) == PARALLEL || getMemberType(dec,member) == SERIES) && getNumMemberEdges(dec,member) == 2);
+    assert((getMemberType(dec,member) == LOOP || getMemberType(dec,member) == SERIES || getMemberType(dec,member) == PARALLEL) && getNumMemberEdges(dec,member) == 2);
     assert(memberIsRepresentative(dec,member));
     dec->members[member].type = SERIES;
 }
@@ -1351,7 +1351,7 @@ void changeLoopToParallel(Decomposition * dec, member_id member){
     assert(memberIsValid(member));
     assert(member < dec->memMembers);
     assert(dec);
-    assert((getMemberType(dec,member) == PARALLEL || getMemberType(dec,member) == SERIES) && getNumMemberEdges(dec,member) == 2);
+	assert((getMemberType(dec,member) == LOOP || getMemberType(dec,member) == SERIES || getMemberType(dec,member) == PARALLEL) && getNumMemberEdges(dec,member) == 2);
     assert(memberIsRepresentative(dec,member));
     dec->members[member].type = PARALLEL;
 }
@@ -1466,4 +1466,14 @@ void reorderComponent(Decomposition *dec, member_id newRoot){
             }
         }while(true);
     }
+}
+void removeEmptyMember(Decomposition *dec,member_id member){
+	assert(dec);
+	assert(memberIsRepresentative(dec,member));
+	assert(memberIsValid(member));
+	assert(getNumMemberEdges(dec,member) == 0 );
+	assert(memberIsInvalid(dec->members[member].parentMember));
+	assert(edgeIsInvalid(dec->members[member].markerOfParent));
+	assert(edgeIsInvalid(dec->members[member].markerToParent));
+	//TODO: mark as unused / free for new allocations
 }

@@ -30,6 +30,10 @@ bool GraphicAddition::containsRow(index_t row) const {
     return transposed ? decompositionHasCol(dec,row) : decompositionHasRow(dec,row);
 }
 
+void GraphicAddition::removeComponent(const std::vector<index_t>& rows, const std::vector<index_t>& columns)
+{
+
+}
 Submatrix GraphicAddition::createSubmatrix() const {
     Submatrix submatrix;
 

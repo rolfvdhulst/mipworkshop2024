@@ -97,11 +97,11 @@ bool checkStats(const SolveStatistics& stats, const std::unordered_map<std::stri
 			}
 		}
 	}else if(knownData.type == MIPResultType::BEST){
-		if(stats.dualBound > knownData.primalBound){
+		if(stats.dualBound -sumFeasTol > knownData.primalBound){
 			std::cout<<"Invalid dual bound for: "<<stats.problemName<<"\n";
 			return false;
 		}
-		if(stats.primalBound < knownData.primalBound){
+		if(stats.primalBound + sumFeasTol < knownData.primalBound){
 			std::cout<<"Found better solution for: "<<stats.problemName<<"\n";
 		}
 		if(stats.isInfeasible ){
@@ -112,11 +112,11 @@ bool checkStats(const SolveStatistics& stats, const std::unordered_map<std::stri
 			std::cout<<"Best instance: "<<stats.problemName<<" declared unbounded\n";
 		}
 	}else if(knownData.type == MIPResultType::OPTIMAL){
-		if(stats.dualBound > knownData.primalBound){
+		if(stats.dualBound - sumFeasTol > knownData.primalBound){
 			std::cout<<"Invalid dual bound for: "<<stats.problemName<<"\n";
 			return false;
 		}
-		if(stats.primalBound < knownData.primalBound){
+		if(stats.primalBound + sumFeasTol < knownData.primalBound){
 			std::cout<<"Found better solution for: "<<stats.problemName<<", which was already optimal? \n";
 			return false;
 		}
@@ -146,6 +146,16 @@ int main(int argc, char ** argv){
 	for(const auto& result : solveResults){
 		if(checkProblem(result,known)){
 			++correctSolutions;
+			if(result.presolvedStatistics.has_value() && result.baseLineStatistics.has_value()
+			&& result.presolvedStatistics->numImpliedAfterPresolve != result.baseLineStatistics->numImpliedAfterPresolve &&
+			result.presolvedStatistics->numTUImpliedColumns > 0){
+				double presolvedTime = result.presolvedStatistics->timeTaken;
+				double baseLineTime = result.baseLineStatistics->timeTaken;
+				double diff = baseLineTime-presolvedTime;
+				if(fabs(diff) > 0.1){
+					std::cout<<result.baseLineStatistics->problemName<<" Diff: "<<diff<<"\n";
+				}
+			}
 		}
 	}
 	std::cout<<correctSolutions<<" / " <<solveResults.size()<<" correct solutions\n";

@@ -592,6 +592,10 @@ static void countChildrenTypes(Decomposition* dec, SPQRNewColumn * newCol, reduc
         }
     }
 }
+void determineTypeLoop(SPQRNewColumn *newCol, reduced_member_id reducedMemberId){
+	assert(pathEdgeIsValid(newCol->reducedMembers[reducedMemberId].firstPathEdge));
+	newCol->reducedMembers[reducedMemberId].type = TYPE_ROOT;
+}
 
 void determineTypeParallel(
         SPQRNewColumn *newCol, reduced_member_id reducedMemberId, int depth){
@@ -1123,7 +1127,10 @@ void determineTypes(Decomposition *dec, SPQRNewColumn *newCol,SPQRColReducedComp
     bool isRoot = reducedMember == component->root;
     member_id member = findMember(dec,newCol->reducedMembers[reducedMember].member); //TODO: find necessary?
     MemberType type = getMemberType(dec,member);
-    if(type == PARALLEL){
+	if(type == LOOP){
+		assert(depth == 0);
+		determineTypeLoop(newCol,reducedMember);
+	}else if(type == PARALLEL){
         determineTypeParallel(newCol,reducedMember,depth);
     }else if (type == SERIES){
         determineTypeSeries(dec,newCol,reducedMember,depth);
@@ -1495,6 +1502,23 @@ static SPQR_ERROR splitSeriesMerging(Decomposition *dec, SPQRNewColumn * newCol,
     return SPQR_OKAY;
 }
 
+static SPQR_ERROR transformLoop(Decomposition *dec, SPQRNewColumn *newCol,reduced_member_id reducedMemberId,
+		NewColInformation * newColInfo, int depth){
+	assert(depth == 0);
+	assert(dec);
+	assert(newCol);
+	assert(newColInfo);
+	assert(newCol->reducedMembers[reducedMemberId].type == TYPE_ROOT);
+	member_id member = newCol->reducedMembers[reducedMemberId].member;
+	int numEdges = getNumMemberEdges(dec,member);
+	assert(numEdges == 1 || numEdges == 2);
+	setTerminalMember(newColInfo,member);
+	if(numEdges == 2){
+		changeLoopToParallel(dec,member);
+	}
+
+	return SPQR_OKAY;
+}
 static SPQR_ERROR transformSeries(Decomposition *dec, SPQRNewColumn *newCol,reduced_member_id reducedMemberId,
                                   NewColInformation * newColInfo, int depth){
     assert(dec);
@@ -1977,7 +2001,9 @@ static SPQR_ERROR transformReducedMember(Decomposition *dec, SPQRNewColumn * new
         SPQR_CALL(transformParallel(dec,newCol,reducedMemberId,newColInfo,depth));
     }else if(type == RIGID){
         SPQR_CALL(transformRigid(dec,newCol,reducedMemberId,newColInfo,depth));
-    }
+    }else if(type == LOOP){
+		SPQR_CALL(transformLoop(dec,newCol,reducedMemberId,newColInfo,depth));
+	}
     return SPQR_OKAY;
 }
 
@@ -2126,15 +2152,27 @@ SPQR_ERROR addNewColumn(Decomposition *dec, SPQRNewColumn *newCol){
                                    findNode(dec,information.terminalNode[0]),findNode(dec,information.terminalNode[1]));
             }
         }else{
-            member_id newSeries;
-            SPQR_CALL(createConnectedSeries(dec,newCol->newRowEdges,newCol->numNewRowEdges,newCol->newColIndex,&newSeries));
-            edge_id markerEdge = INVALID_EDGE;
-            edge_id ignore = INVALID_EDGE;
-            SPQR_CALL(createMarkerPairWithReferences(dec,information.member,newSeries,false,&markerEdge,&ignore));
-            if(nodeIsValid(information.terminalNode[0])){
-                setEdgeHeadAndTail(dec,markerEdge,findNode(dec,information.terminalNode[0]),
-                                   findNode(dec,information.terminalNode[1]));
-            }
+			if(getMemberType(dec,information.member) == LOOP){
+				assert(getNumMemberEdges(dec,information.member) == 1); //consists of a single row
+				edge_id colEdge;
+				SPQR_CALL(createColumnEdge(dec,information.member,&colEdge,newCol->newColIndex));
+				edge_id rowEdge;
+				for (int i = 0; i < newCol->numNewRowEdges; ++i) {
+					SPQR_CALL(createRowEdge(dec,information.member,&rowEdge,newCol->newRowEdges[i]));
+				}
+
+				changeLoopToSeries(dec,information.member);
+			}else{
+				member_id newSeries;
+				SPQR_CALL(createConnectedSeries(dec,newCol->newRowEdges,newCol->numNewRowEdges,newCol->newColIndex,&newSeries));
+				edge_id markerEdge = INVALID_EDGE;
+				edge_id ignore = INVALID_EDGE;
+				SPQR_CALL(createMarkerPairWithReferences(dec,information.member,newSeries,false,&markerEdge,&ignore));
+				if(nodeIsValid(information.terminalNode[0])){
+					setEdgeHeadAndTail(dec,markerEdge,findNode(dec,information.terminalNode[0]),
+							findNode(dec,information.terminalNode[1]));
+				}
+			}
         }
     }else{
 #ifndef NDEBUG
@@ -2146,13 +2184,20 @@ SPQR_ERROR addNewColumn(Decomposition *dec, SPQRNewColumn *newCol){
             NewColInformation information = emptyNewColInformation();
             SPQR_CALL(transformComponent(dec,newCol,&newCol->reducedComponents[i],&information));
             reorderComponent(dec,information.member); //reorder the subtree so that the newly series member is a parent
-            edge_id markerEdge = INVALID_EDGE;
-            edge_id ignore = INVALID_EDGE;
-            SPQR_CALL(createMarkerPairWithReferences(dec,newSeries,information.member,true,&ignore,&markerEdge));
-            if (nodeIsValid(information.terminalNode[0])) {
-                setEdgeHeadAndTail(dec, markerEdge, findNode(dec, information.terminalNode[0]),
-                                   findNode(dec, information.terminalNode[1]));
-            }
+			if(getMemberType(dec,information.member) == LOOP){
+				assert(getNumMemberEdges(dec,information.member) == 1); //consists of a single row; we can move it
+
+				moveEdgeToNewMember(dec, getFirstMemberEdge(dec,information.member),information.member,newSeries);
+				removeEmptyMember(dec,information.member);
+			}else{
+				edge_id markerEdge = INVALID_EDGE;
+				edge_id ignore = INVALID_EDGE;
+				SPQR_CALL(createMarkerPairWithReferences(dec,newSeries,information.member,true,&ignore,&markerEdge));
+				if (nodeIsValid(information.terminalNode[0])) {
+					setEdgeHeadAndTail(dec, markerEdge, findNode(dec, information.terminalNode[0]),
+							findNode(dec, information.terminalNode[1]));
+				}
+			}
         }
         decreaseNumConnectedComponents(dec,newCol->numReducedComponents-1);
         assert(numConnectedComponents(dec) == (numDecComponentsBefore - newCol->numReducedComponents + 1));

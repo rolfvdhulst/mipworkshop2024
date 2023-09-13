@@ -34,7 +34,7 @@ bool processProblem(const Problem& problem, const std::filesystem::path& path){
     auto presolveEnd = std::chrono::high_resolution_clock::now();
     double presolveTime = std::chrono::duration<double>(presolveEnd - presolveStart).count();
 	std::cout<<"Presolving took: "<<presolveTime<<" seconds\n";
-    double totalTimeLimit = 3600.0;
+    double totalTimeLimit = 10.0;
     double reducedTimeLimit = std::max(totalTimeLimit - presolveTime, 1.0);
 
 	auto normalSCIP = solveProblemSCIP(problem,totalTimeLimit);

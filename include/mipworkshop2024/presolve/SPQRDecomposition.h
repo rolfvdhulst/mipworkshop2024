@@ -82,9 +82,9 @@ typedef enum {
     RIGID = 0, //Also known as triconnected components
     PARALLEL = 1,//Also known as a 'bond'
     SERIES = 2, //Also known as 'polygon' or 'cycle'
-    UNASSIGNED = 3 // To indicate that the member has been merged/is not representative; this is just there to catch errors.
-    //There is a last type, known as 'Loop'; which is simply a parallel or series member with only two edges
-    //(note that this is in fact, both at the same time)
+	LOOP = 3,
+    UNASSIGNED = 4 // To indicate that the member has been merged/is not representative; this is just there to catch errors.
+
 } MemberType;
 
 typedef struct {
@@ -292,6 +292,7 @@ void changeEdgeHead(Decomposition *dec, edge_id edge,node_id oldHead, node_id ne
 void changeEdgeTail(Decomposition *dec, edge_id edge,node_id oldTail, node_id newTail);
 void flipEdge(Decomposition *dec, edge_id edge);
 void mergeNodeEdgeList(Decomposition *dec, node_id toMergeInto, node_id toRemove);
+void removeEmptyMember(Decomposition *dec,member_id member);
 
 int nodeDegree(Decomposition *dec, node_id node);
 
