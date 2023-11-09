@@ -63,16 +63,14 @@ SolveStatistics statisticsFromJson(const nlohmann::json& json){
 nlohmann::json ProblemLogData::toJson() const
 {
 	nlohmann::json json;
-	if(presolvedStatistics.has_value()){
-		json["presolvedStatistics"] = statisticsToJson(presolvedStatistics.value());
-	}
-	if(baseLineStatistics.has_value()){
-		json["baseLineStatistics"] = statisticsToJson(baseLineStatistics.value());
+	if(solveStatistics.has_value()){
+		json["solveStatistics"] = statisticsToJson(solveStatistics.value());
 	}
 
     json["numUpgraded"] = numUpgraded;
     json["numDowngraded"] = numDowngraded;
     json["writeType"] = writeType;
+    json["doDownGrade"] = doDownGrade;
 
 	return json;
 }
@@ -80,16 +78,14 @@ nlohmann::json ProblemLogData::toJson() const
 ProblemLogData ProblemLogData::fromJson(const nlohmann::json& json)
 {
 	ProblemLogData data;
-	if(json.contains("baseLineStatistics")){
-		data.baseLineStatistics = statisticsFromJson(json["baseLineStatistics"]);
+	if(json.contains("solveStatistics")){
+		data.solveStatistics = statisticsFromJson(json["solveStatistics"]);
 	}
-	if(json.contains("presolvedStatistics")) {
-        data.presolvedStatistics = statisticsFromJson(json["presolvedStatistics"]);
-    }
 
     data.numUpgraded = json["numUpgraded"];
     data.numDowngraded = json["numDowngraded"];
     data.writeType = json["writeType"];
+    data.doDownGrade = json["doDownGrade"];
     
 	return data;
 }

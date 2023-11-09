@@ -26,8 +26,8 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
 
   /* initialize SCIP */
   SCIP_CALL( SCIPcreate(&scip) );
-
-  SCIPprintVersion(scip,stdout);
+  SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0));
+  //SCIPprintVersion(scip,stdout);
 
   /* include default SCIP plugins */
   SCIP_CALL( SCIPincludeDefaultPlugins(scip) );
@@ -140,7 +140,7 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
 	result.statistics.TUDetectionTime = 0.0;
 
 
-	SCIP_CALL(SCIPprintStatistics(scip,stdout));
+//	SCIP_CALL(SCIPprintStatistics(scip,stdout));
   for(SCIP_VAR *  var : vars){
     SCIP_CALL(SCIPreleaseVar(scip,&var));
   }

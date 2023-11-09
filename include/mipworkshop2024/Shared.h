@@ -14,7 +14,7 @@ using index_t = std::size_t;
 static constexpr index_t INVALID = std::numeric_limits<std::size_t>::max();
 
 constexpr double infinity = 1e100;
-constexpr double sumFeasTol = 1e-5;
+constexpr double sumFeasTol = 1e-4;
 constexpr double feasTol = 1e-8;
 
 inline bool isInfinite(double value){

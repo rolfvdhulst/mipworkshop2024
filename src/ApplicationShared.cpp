@@ -67,8 +67,8 @@ bool doPresolve(const std::string &problemPath,
     auto compStart = printStartString();
     Presolver presolver;
     presolver.doPresolve(problem, TUSettings{
-            .doDowngrade = false,
-            .writeType = VariableType::INTEGER
+            .doDowngrade = true,
+            .writeType = VariableType::CONTINUOUS
     });
     auto compEnd = printEndString();
 
@@ -169,9 +169,7 @@ bool doPostsolve(const std::string &problemPath,
     {
         auto test = problem->convertExternalSolution(processedSolution);
         if(!test.has_value() || !problem->isFeasible(test.value())){
-            std::cerr<<"recovered solution is still not valid!\n";
-            return false;
-        }
+            std::cerr<<"recovered solution is still not valid... still writing in case tolerances are different\n";}
     }
 
     std::ofstream outStream(postsolvedSolution);
@@ -207,27 +205,30 @@ SCIP_RETCODE runSCIP(const std::string &problemPath, const std::string &solution
 
     SCIP_CALL(SCIPreadProb(scip, problemPath.c_str(), NULL));
 
-    SCIP_CALL(SCIPsetRealParam(scip, "limits/time", 3.0));
+    SCIP_CALL(SCIPsetRealParam(scip, "limits/time", 100.0));
     SCIP_CALL(SCIPsolve(scip));
 
-    ExternalSolution solution;
-    SCIP_SOL *sol = SCIPgetBestSol(scip);
-    solution.objectiveValue = SCIPsolGetOrigObj(sol);
-    SCIP_VAR **vars = SCIPgetOrigVars(scip);
-    int nVars = SCIPgetNOrigVars(scip);
-    for (int i = 0; i < nVars; ++i) {
-        const char *name = SCIPvarGetName(vars[i]);
-        double value = SCIPgetSolVal(scip, sol, vars[i]);
-        solution.variableValues[name] = value;
+    if(SCIPgetNSols(scip) > 0){
+        ExternalSolution solution;
+        SCIP_SOL *sol = SCIPgetBestSol(scip);
+        solution.objectiveValue = SCIPsolGetOrigObj(sol);
+        SCIP_VAR **vars = SCIPgetOrigVars(scip);
+        int nVars = SCIPgetNOrigVars(scip);
+        for (int i = 0; i < nVars; ++i) {
+            const char *name = SCIPvarGetName(vars[i]);
+            double value = SCIPgetSolVal(scip, sol, vars[i]);
+            solution.variableValues[name] = value;
+        }
+
+        std::ofstream fileStream(solutionPath);
+        if (!fileStream.is_open() || !fileStream.good()) {
+            return SCIP_FILECREATEERROR;
+        }
+        if (!solToStream(solution, fileStream)) {
+            return SCIP_FILECREATEERROR;
+        }
     }
 
-    std::ofstream fileStream(solutionPath);
-    if (!fileStream.is_open() || !fileStream.good()) {
-        return SCIP_FILECREATEERROR;
-    }
-    if (!solToStream(solution, fileStream)) {
-        return SCIP_FILECREATEERROR;
-    }
     /********************
      * Deinitialization *
      ********************/

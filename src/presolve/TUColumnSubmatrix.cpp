@@ -337,7 +337,7 @@ std::vector<TotallyUnimodularColumnSubmatrix> TUColumnSubmatrixFinder::mixedComp
 	if(bestSubmatrix.columns.empty()){
 		return {};
 	}
-	std::cout<<"Selecting submatrix with: "<<bestSubmatrix.columns.size()<<" columns\n";
+//	std::cout<<"Selecting submatrix with: "<<bestSubmatrix.columns.size()<<" columns\n";
 	return {computeImplyingColumns(bestSubmatrix)};
 
 }
@@ -552,8 +552,8 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
     for(const auto& component : validComponents){
         contColumns += components[component].cols.size();
     }
-    std::cout<<"Incidence: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns, "
-             << unitCols.size()<< " unit columns." <<std::endl;
+//    std::cout<<"Incidence: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns, "
+//             << unitCols.size()<< " unit columns." <<std::endl;
 
 	Submatrix submatrix = addition.createSubmatrix();
 	if(!transposed){
@@ -737,7 +737,7 @@ Submatrix TUColumnSubmatrixFinder::computeNetworkSubmatrix(bool transposed,
     for(const auto& component : validComponents){
         contColumns += components[component].cols.size();
     }
-    std::cout<<"Network: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns"<<std::endl;
+//    std::cout<<"Network: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns"<<std::endl;
 
     return addition.createSubmatrix(problem.numRows(),problem.numCols());
 }

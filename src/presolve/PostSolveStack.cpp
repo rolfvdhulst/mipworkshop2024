@@ -23,15 +23,24 @@ nlohmann::json submatToJson(const TotallyUnimodularColumnSubmatrix& submat){
 
 TotallyUnimodularColumnSubmatrix submatFromJson(const nlohmann::json& json){
     TotallyUnimodularColumnSubmatrix submat;
-    for(const auto& col : json["submatColumns"]){
-        submat.submatColumns.push_back(col);
+    if(json.contains("submatColumns")){
+        for(const auto& col : json["submatColumns"]){
+            submat.submatColumns.push_back(col);
+        }
     }
-    for(const auto& col : json["implyingColumns"]){
-        submat.implyingColumns.push_back(col);
+
+    if(json.contains("implyingColumns")){
+        for(const auto& col : json["implyingColumns"]){
+            submat.implyingColumns.push_back(col);
+        }
     }
-    for(const auto& row : json["submatRows"]){
-        submat.submatRows.push_back(row);
+
+    if(json.contains("submatRows")){
+        for(const auto& row : json["submatRows"]){
+            submat.submatRows.push_back(row);
+        }
     }
+
     return submat;
 }
 nlohmann::json postSolveToJson(const PostSolveStack& stack){
@@ -45,8 +54,10 @@ nlohmann::json postSolveToJson(const PostSolveStack& stack){
 
 PostSolveStack postSolveFromJson(const nlohmann::json& json){
     PostSolveStack stack;
-    for(const auto& reduction : json["reductions"]){
-        stack.reductions.push_back(submatFromJson(reduction));
+    if(json.contains("reductions")){
+        for(const auto& reduction : json["reductions"]){
+            stack.reductions.push_back(submatFromJson(reduction));
+        }
     }
     stack.containsTUSubmatrix = json["containsTUSubmatrix"];
 

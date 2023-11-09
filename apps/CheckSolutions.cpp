@@ -129,16 +129,17 @@ bool checkStats(const SolveStatistics& stats, const std::unordered_map<std::stri
 }
 bool checkProblem(const ProblemLogData& data, const std::unordered_map<std::string,KnownData>& known){
 	bool good = true;
-	if(data.baseLineStatistics.has_value() && !checkStats(data.baseLineStatistics.value(),known)){
-		good = false;
-	}
-	if(data.presolvedStatistics.has_value() && !checkStats(data.presolvedStatistics.value(),known)){
+	if(data.solveStatistics.has_value() && !checkStats(data.solveStatistics.value(),known)){
 		good = false;
 	}
 	return good;
 }
 int main(int argc, char ** argv){
 	std::vector<std::string> args(argv,argv+argc);
+    if(args.size() != 3){
+        std::cout<<"Please supply a file with known bounds and an input folder!"<<std::endl;
+        return 0;
+    }
 
 	auto known = getKnownBounds(args[1]);
 	auto solveResults = getSolveResults(args[2]);
@@ -146,16 +147,6 @@ int main(int argc, char ** argv){
 	for(const auto& result : solveResults){
 		if(checkProblem(result,known)){
 			++correctSolutions;
-			if(result.presolvedStatistics.has_value() && result.baseLineStatistics.has_value()
-			&& result.presolvedStatistics->numImpliedAfterPresolve != result.baseLineStatistics->numImpliedAfterPresolve &&
-			result.presolvedStatistics->numTUImpliedColumns > 0){
-				double presolvedTime = result.presolvedStatistics->timeTaken;
-				double baseLineTime = result.baseLineStatistics->timeTaken;
-				double diff = baseLineTime-presolvedTime;
-				if(fabs(diff) > 0.1){
-					std::cout<<result.baseLineStatistics->problemName<<" Diff: "<<diff<<"\n";
-				}
-			}
 		}
 	}
 	std::cout<<correctSolutions<<" / " <<solveResults.size()<<" correct solutions\n";

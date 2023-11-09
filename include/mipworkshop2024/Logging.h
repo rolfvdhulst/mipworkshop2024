@@ -10,9 +10,9 @@
 struct ProblemLogData {
     std::size_t numUpgraded;
     std::size_t numDowngraded;
+    bool doDownGrade;
     VariableType writeType;
-  std::optional<SolveStatistics> presolvedStatistics;
-  std::optional<SolveStatistics> baseLineStatistics;
+  std::optional<SolveStatistics> solveStatistics;
 
   [[nodiscard]] nlohmann::json toJson() const;
   static ProblemLogData fromJson(const nlohmann::json& json);
