@@ -27,6 +27,8 @@ public:
 
   void setNumSecondary(index_t numSecondary);
 
+  void scale(const std::vector<double>& rowScale, const std::vector<double>& colScale);
+
   template<typename StorageType>
   index_t addPrimaryVector(const MatrixSlice<StorageType>& slice){
 	  //TODO: check if sorted and if no double coefficients

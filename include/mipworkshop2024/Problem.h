@@ -43,6 +43,7 @@ struct Problem {
   ExternalSolution convertSolution(const Solution& solution) const;
   bool isFeasible(const Solution& solution) const;
   double computeObjective(const Solution& solution) const;
+  void scale(const std::vector<double>& rowScale, const std::vector<double>& colScale);
 
 
   SparseMatrix matrix;

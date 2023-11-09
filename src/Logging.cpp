@@ -69,6 +69,11 @@ nlohmann::json ProblemLogData::toJson() const
 	if(baseLineStatistics.has_value()){
 		json["baseLineStatistics"] = statisticsToJson(baseLineStatistics.value());
 	}
+
+    json["numUpgraded"] = numUpgraded;
+    json["numDowngraded"] = numDowngraded;
+    json["writeType"] = writeType;
+
 	return json;
 }
 
@@ -78,8 +83,13 @@ ProblemLogData ProblemLogData::fromJson(const nlohmann::json& json)
 	if(json.contains("baseLineStatistics")){
 		data.baseLineStatistics = statisticsFromJson(json["baseLineStatistics"]);
 	}
-	if(json.contains("presolvedStatistics")){
-		data.presolvedStatistics = statisticsFromJson(json["presolvedStatistics"]);
-	}
+	if(json.contains("presolvedStatistics")) {
+        data.presolvedStatistics = statisticsFromJson(json["presolvedStatistics"]);
+    }
+
+    data.numUpgraded = json["numUpgraded"];
+    data.numDowngraded = json["numDowngraded"];
+    data.writeType = json["writeType"];
+    
 	return data;
 }

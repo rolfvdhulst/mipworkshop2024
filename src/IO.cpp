@@ -332,7 +332,6 @@ bool MPSReader::processNewSection(const std::string& line, Problem &problem) {
     }
     return true;
   }
-
   if(words[0] == "ENDATA"){
     setNewSection(problem,MPSSection::ENDATA);
     if(words.size() > 1){
@@ -1040,4 +1039,22 @@ bool problemToStreamCompressed(const Problem& problem, std::ostream& stream){
 bool writeMPSFile(const Problem& problem,const std::filesystem::path& path){
   std::ofstream stream(path);
   return problemToStreamCompressed(problem,stream);
+}
+
+
+bool writePostSolveStackFile(const PostSolveStack& stack, const std::filesystem::path& path){
+    std::ofstream stream(path);
+    return postSolveStackToStream(stack,stream);
+}
+bool postSolveStackToStream(const PostSolveStack& stack, std::ostream& stream){
+    auto json = postSolveToJson(stack);
+
+    stream << json;
+    return stream.good();
+}
+std::optional<PostSolveStack> postSolveStackFromStream(std::istream& stream){
+    nlohmann::json json;
+    stream >> json;
+    PostSolveStack stack = postSolveFromJson(json);
+    return stack;
 }

@@ -312,6 +312,8 @@ SPQR_ERROR createMarkerPairWithReferences(Decomposition *dec, member_id parentMe
 
 void reorderComponent(Decomposition *dec, member_id newRoot);
 
+
+void removeComponents(Decomposition *dec,const row_idx * componentRows, size_t numRows,const col_idx  * componentCols, size_t numCols);
 //Debugging
 void decompositionToDot(FILE * stream, const Decomposition *dec, bool useElementNames);
 

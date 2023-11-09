@@ -105,7 +105,7 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
 
   SCIP_SOL * sol = SCIPgetBestSol(scip);
   if(sol != NULL) {
-      solution.objectiveValue = SCIPsolGetOrigObj(sol);
+      solution.objectiveValue = SCIPgetSolOrigObj(scip,sol);
       int nVars = SCIPgetNOrigVars(scip);
       for (int i = 0; i < nVars; ++i) {
           const char *name = SCIPvarGetName(vars[i]);
@@ -297,11 +297,15 @@ std::optional<Solution> doPostSolve(const Problem& originalProblem,
 			}
 		}
 		if(isAlreadyGood) continue;
-#ifndef NDEBUG
+
+        bool implyingIsCorrect = true;
 		for(index_t implyingCol : it->implyingColumns){
-			assert(isFeasIntegral(correctedSol.values[implyingCol]));
+            implyingIsCorrect &= isFeasIntegral(correctedSol.values[implyingCol]);
 		}
-#endif
+        if(!implyingIsCorrect){
+            std::cout<<"Implying column is not integer?!\n";
+            return std::nullopt;
+        }
 		SCIP_RETCODE code = doSolveTULP(originalProblem,*it,correctedSol);
 		if(code != SCIP_OKAY){
 			std::cout<<"Some error occurred during TU postsolve\n";

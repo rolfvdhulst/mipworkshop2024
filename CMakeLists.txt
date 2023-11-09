@@ -31,6 +31,7 @@ add_library(mipworkshop2024
         src/presolve/SPQRRowAddition.c
         src/presolve/SPQRColumnAddition.c
         src/presolve/SPQRDecomposition.c
+        src/presolve/CCCScaling.cpp
         )
 target_include_directories(mipworkshop2024
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

@@ -8,7 +8,9 @@
 #include "Solve.h"
 #include "mipworkshop2024/json.hpp"
 struct ProblemLogData {
-
+    std::size_t numUpgraded;
+    std::size_t numDowngraded;
+    VariableType writeType;
   std::optional<SolveStatistics> presolvedStatistics;
   std::optional<SolveStatistics> baseLineStatistics;
 

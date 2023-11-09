@@ -91,3 +91,18 @@ SparseMatrix SparseMatrix::transposedFormat() const {
 
     return transposed;
 }
+
+void SparseMatrix::scale(const std::vector<double> &rowScale, const std::vector<double> &colScale) {
+    const auto& primaryScale = format == SparseMatrixFormat::ROW_WISE ? rowScale : colScale;
+    const auto& secondaryScale = format == SparseMatrixFormat::ROW_WISE ? colScale : rowScale;
+    index_t numPrimary = format == SparseMatrixFormat::ROW_WISE ? num_rows : num_cols;
+    for(index_t i = 0; i < numPrimary; ++i){
+        index_t begin = primaryStart[i];
+        index_t end = primaryStart[i+1];
+        for(index_t pos = begin; pos < end; ++pos){
+            index_t secondary = secondaryIndex[pos];
+            values[pos] *= primaryScale[i]* secondaryScale[secondary];
+        }
+    }
+
+}

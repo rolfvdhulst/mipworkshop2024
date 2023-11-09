@@ -9,6 +9,7 @@
 #include "mipworkshop2024/Solution.h"
 #include <vector>
 #include <variant>
+#include "mipworkshop2024/json.hpp"
 
 struct TotallyUnimodularColumnSubmatrix{
 	std::vector<index_t> submatRows;
@@ -37,4 +38,7 @@ public:
   bool containsTUSubmatrix = false;
 };
 
+nlohmann::json postSolveToJson(const PostSolveStack& stack);
+
+PostSolveStack postSolveFromJson(const nlohmann::json& json);
 #endif //MIPWORKSHOP2024_SRC_PRESOLVE_POSTSOLVESTACK_H

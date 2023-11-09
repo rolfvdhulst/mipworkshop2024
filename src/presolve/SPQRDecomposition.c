@@ -844,9 +844,9 @@ edge_id getPreviousMemberEdge(const Decomposition *dec, edge_id edge){
     return edge;
 }
 SPQR_ERROR createStandaloneParallel(Decomposition *dec, col_idx * columns, int num_columns, row_idx row, member_id * pMember){
-    //TODO: fix mappings
     member_id member;
-    SPQR_CALL(createMember(dec,PARALLEL,&member));
+    MemberType type = num_columns <= 1 ? LOOP : PARALLEL;
+    SPQR_CALL(createMember(dec,type,&member));
 
     edge_id row_edge;
     SPQR_CALL(createRowEdge(dec,member,&row_edge,row));
@@ -1476,4 +1476,24 @@ void removeEmptyMember(Decomposition *dec,member_id member){
 	assert(edgeIsInvalid(dec->members[member].markerOfParent));
 	assert(edgeIsInvalid(dec->members[member].markerToParent));
 	//TODO: mark as unused / free for new allocations
+}
+
+void removeComponents(Decomposition *dec,const row_idx * componentRows, size_t numRows,const col_idx  * componentCols, size_t numCols){
+    //TODO: remove edge, node, member data and update numConnectedComponents correctly.
+    //The below just removes the 'link' but not the internal datastructures.
+    //This is sufficient for our purposes, as long as we do not re-introduce any of the 'negated' rows/columns back into the decomposition.
+
+    for (int i = 0; i < numRows; ++i) {
+        row_idx row = componentRows[i];
+        if(edgeIsValid(dec->rowEdges[row])){
+            dec->rowEdges[row] = INVALID_EDGE;
+        }
+    }
+
+    for (int i = 0; i < numCols; ++i) {
+        col_idx col = componentCols[i];
+        if(edgeIsValid(dec->columnEdges[col])){
+            dec->columnEdges[col] = INVALID_EDGE;
+        }
+    }
 }

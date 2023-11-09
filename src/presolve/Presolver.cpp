@@ -12,15 +12,17 @@ const PostSolveStack& Presolver::postSolveStack() const
 	return stack;
 }
 
-void Presolver::doPresolve(const Problem& t_problem)
+void Presolver::doPresolve(const Problem& t_problem,const TUSettings& settings)
 {
     //TODO: make datastructure and technique for basic presolving reductions
     problem = t_problem;
-    findTUColumnSubmatrix();
+    findTUColumnSubmatrix(settings);
 }
-void Presolver::findTUColumnSubmatrix()
+void Presolver::findTUColumnSubmatrix(const TUSettings& settings)
 {
-	TUColumnSubmatrixFinder finder(problem);
+    numUpgraded = 0;
+    numDowngraded = 0;
+	TUColumnSubmatrixFinder finder(problem,settings);
 	auto submatrices = finder.computeTUSubmatrices();
 	for(const auto& submatrix : submatrices){
 
@@ -30,7 +32,20 @@ void Presolver::findTUColumnSubmatrix()
 		}
 #endif
 		for(const auto& column : submatrix.submatColumns){
-			problem.colType[column] = VariableType::IMPLIED_INTEGER;
+            VariableType type = settings.writeType;
+            if(type == VariableType::INTEGER || type == VariableType::BINARY){
+                if(problem.lb[column] == 0.0 && problem.ub[column] == 1.0){
+                    type = VariableType::BINARY;
+                }else{
+                    type = VariableType::INTEGER;
+                }
+            }
+            if(problem.colType[column] == VariableType::CONTINUOUS){
+                ++numUpgraded;
+            }else{
+                ++numDowngraded;
+            }
+			problem.colType[column] = type;
 		}
 		stack.totallyUnimodularColumnSubmatrix(submatrix);
 	}

@@ -9,9 +9,10 @@
 #include "mipworkshop2024/presolve/NetworkAddition.hpp"
 
 struct TUColumnSubmatrixFinder;
-TUColumnSubmatrixFinder::TUColumnSubmatrixFinder(Problem& problem)
+TUColumnSubmatrixFinder::TUColumnSubmatrixFinder(Problem& problem, const TUSettings& settings)
 :problem{problem},
-rowMatrix{problem.matrix.transposedFormat()}
+rowMatrix{problem.matrix.transposedFormat()},
+settings{settings}
 {
 
 }
@@ -86,11 +87,11 @@ std::vector<TotallyUnimodularColumnSubmatrix> TUColumnSubmatrixFinder::computeTU
 	//This potentially saves a lot of row-wise iterations over the matrix
 
 	computeRowAndColumnTypes();
-	if(numContinuousRequired + numContinuousDisconnected == 0){
-		//We use a different algorithm (although largely the same ideas) in this case, because it is much easier to handle
-		//Continuous columns make things more difficult.
-		return integralComputeTUSubmatrices();
-	}
+//	if(numContinuousRequired + numContinuousDisconnected == 0){
+//		//We use a different algorithm (although largely the same ideas) in this case, because it is much easier to handle
+//		//Continuous columns make things more difficult.
+//		return integralComputeTUSubmatrices();
+//	}
 	return mixedComputeTUSubmatrices();
 }
 
@@ -329,7 +330,10 @@ std::vector<TotallyUnimodularColumnSubmatrix> TUColumnSubmatrixFinder::mixedComp
 		submatrices.push_back(computeNetworkSubmatrix(transposed,components,componentValid,rowComponent));
 	}
 
-	auto& bestSubmatrix =  submatrices[1].columns.size() > submatrices[0].columns.size() ? submatrices[1] : submatrices[0];
+    auto best = std::max_element(submatrices.begin(),submatrices.end(),[](const auto& first, const auto& second){
+        return first.columns.size() < second.columns.size();
+    });
+	auto& bestSubmatrix = *best;
 	if(bestSubmatrix.columns.empty()){
 		return {};
 	}
@@ -461,7 +465,9 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 		}
 	}
 
-	if(numIntegralEither > 0){
+    index_t expandedColumns = 0;
+
+    if(numIntegralEither > 0 && settings.doDowngrade){
 		// Clean up rows; If we removed any components because the continuous columns are not TU,
 		// integral_either entries need to become integral_fixed, and the row excluded from any further candidates
 		std::vector<bool> extendedInvalidRows = isNonIntegralRow;
@@ -535,13 +541,19 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 			}
 
 		}
-		index_t expandedColumns = 0;
 		for(const auto& candidate : candidates){
+            assert(problem.colType[candidate.column] != VariableType::CONTINUOUS);
 			if(addition.tryAddCol(candidate.column, getColumnVector(candidate.column))){
 				++expandedColumns;
 			}
 		}
 	}
+    std::size_t contColumns = 0;
+    for(const auto& component : validComponents){
+        contColumns += components[component].cols.size();
+    }
+    std::cout<<"Incidence: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns, "
+             << unitCols.size()<< " unit columns." <<std::endl;
 
 	Submatrix submatrix = addition.createSubmatrix();
 	if(!transposed){
@@ -550,7 +562,7 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 			submatrix.addRow(unitRow);
 		}
 		for(const auto& column : unitRowColumns){
-			assert(!submatrix.containsColumn[column]); //TODO: can fail?
+			assert(!submatrix.containsColumn[column]);
 			submatrix.addColumn(column);
 		}
 	}else{
@@ -569,39 +581,163 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 
 Submatrix TUColumnSubmatrixFinder::computeNetworkSubmatrix(bool transposed,
                                                            const std::vector<Component> &components,
-                                                           const std::vector<bool> &componentValid,
+                                                           const std::vector<bool>& componentValid,
                                                            const std::vector<long> &rowComponents) {
     GraphicAddition addition(problem.numRows(),problem.numCols(),Submatrix::INIT_NONE,transposed);
-	std::vector<index_t> invalidComponents;
-	std::vector<index_t> validComponents;
-	for(std::size_t i = 0; i < components.size(); ++i){
-		if(!componentValid[i])
-		{
-			invalidComponents.push_back(i);
-			continue;
-		}
-		auto& component = components[i];
 
-		for(index_t row : component.rows){
-			bool added = addition.tryAddRow(row, MatrixSlice<EmptySlice>());
-			assert(added);
-		}
-		bool good = true;
-		for(index_t col : component.cols){
-			if (!addition.tryAddCol(col, getColumnVector(col)))
-			{
-				good = false;
-				break;
-			}
-		}
+    std::vector<index_t> invalidComponents;
+    std::vector<index_t> validComponents;
+	for(std::size_t i = 0; i < components.size(); ++i){
+		auto& component = components[i];
+        if(!componentValid[i]){
+            invalidComponents.push_back(i);
+            continue;
+        }
+        bool doColumnWise = true; //TODO: decide based on some metric
+        bool good = true;
+        if(doColumnWise){
+            for(index_t row : component.rows){
+                bool added = addition.tryAddRow(row, MatrixSlice<EmptySlice>());
+                assert(added);
+            }
+            for(index_t col : component.cols){
+                if (!addition.tryAddCol(col, getColumnVector(col)))
+                {
+                    good = false;
+                    break;
+                }
+            }
+        }
+        else{
+            for(index_t col : component.cols){
+                bool added = addition.tryAddCol(col,MatrixSlice<EmptySlice>());
+                assert(added);
+            }
+            for(index_t row : component.rows){
+                if (!addition.tryAddRow(row, getRowVector(row)))
+                {
+                    good = false;
+                    break;
+                }
+            }
+        }
+
+        if(good){
+            if(!component.rows.empty()){
+                auto result = addition.createComponentGraph(component.rows,component.cols);
+                if(!result.has_value()){
+                    throw std::logic_error("Aaah, what happened");
+                }
+                good = result->checkConnectedMatrix(transposed ? rowMatrix : problem.matrix,transposed ? component.rows : component.cols);
+            }
+        }
 		if(good){
 			validComponents.push_back(i);
-
 		}else{
 			invalidComponents.push_back(i);
 			addition.removeComponent(component.rows,component.cols);
 		}
 	}
 
-    return addition.createSubmatrix();
+    index_t expandedColumns = 0;
+
+    if(numIntegralEither > 0 && settings.doDowngrade){
+        // Clean up rows; If we removed any components because the continuous columns are not TU,
+        // integral_either entries need to become integral_fixed, and the row excluded from any further candidates
+        std::vector<bool> extendedInvalidRows = isNonIntegralRow;
+
+        for(index_t index : invalidComponents){
+            const auto& component = components[index];
+            for(index_t row : component.rows){
+                extendedInvalidRows[row] = true;
+            }
+        }
+
+        struct ColCandidateData{
+            index_t column;
+            index_t nContinuousComponents;
+            index_t nonComponentNonzeros;
+            index_t nonzeros;
+            double obj;
+            bool isBinary;
+        };
+
+        std::vector<ColCandidateData> candidates;
+        std::unordered_map<long,index_t> colComponentEntries; //component idx -> number of entries
+        for(index_t i = 0; i < problem.numCols(); ++i){
+            if(types[i] != TUColumnType::INTEGRAL_EITHER) continue;
+            colComponentEntries.clear();
+            bool containsInvalidRow = false;
+            index_t nonzeros = 0;
+            for(const auto& nonzero : getColumnVector(i)){
+                if(extendedInvalidRows[nonzero.index()]){
+                    containsInvalidRow = true;
+                    break;
+                }
+                ++nonzeros;
+                long component = rowComponents[nonzero.index()] - 1 ;
+                auto hashmapEntry = colComponentEntries.find(component);
+                if(hashmapEntry == colComponentEntries.end()){
+                    colComponentEntries.insert({component,1});
+                }else{
+                    ++hashmapEntry->second;
+                }
+            }
+            if(containsInvalidRow) continue;
+            index_t nNonComponentEntries = colComponentEntries[-1];
+            ColCandidateData data{
+                    .column = i,
+                    .nContinuousComponents = colComponentEntries.size() -1,
+                    .nonComponentNonzeros = nNonComponentEntries,
+                    .nonzeros = nonzeros,
+                    .obj = problem.obj[i],
+                    .isBinary = problem.colType[i] == VariableType::BINARY,
+            };
+            candidates.push_back(data);
+        }
+
+        std::vector<bool> colsInCurrentMatrix(problem.numCols(),false);
+        for(index_t component : validComponents){
+            for(const auto& col : components[component].cols){
+                colsInCurrentMatrix[col] = true;
+            }
+        }
+        SignAddition sca(problem.numRows(),problem.numCols(),colsInCurrentMatrix);
+        const auto& scaRowMat = rowMatrix;
+        const auto& scaColMat = problem.matrix;
+
+        std::sort(candidates.begin(),candidates.end(),[](const ColCandidateData& first, const ColCandidateData& second){
+            return first.nonzeros > second.nonzeros;
+            if(first.nContinuousComponents == second.nContinuousComponents){
+                return first.obj < second.obj;
+            }
+            return first.nContinuousComponents < second.nContinuousComponents;
+        });
+
+        for(index_t row = 0; row < problem.numRows(); ++row){
+            if(!addition.containsRow(row) && !extendedInvalidRows[row] )
+            {
+                bool good = addition.tryAddRow(row,MatrixSlice<EmptySlice>());
+                assert(good);
+            }
+
+        }
+        for(const auto& candidate : candidates){
+            assert(problem.colType[candidate.column] != VariableType::CONTINUOUS);
+            if(addition.checkCol(candidate.column, getColumnVector(candidate.column)) &&
+               sca.tryAddColumn(scaRowMat,scaColMat,candidate.column)){
+                addition.addLastCheckedCol();
+                ++expandedColumns;
+            }
+        }
+    }
+
+
+    std::size_t contColumns = 0;
+    for(const auto& component : validComponents){
+        contColumns += components[component].cols.size();
+    }
+    std::cout<<"Network: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns"<<std::endl;
+
+    return addition.createSubmatrix(problem.numRows(),problem.numCols());
 }

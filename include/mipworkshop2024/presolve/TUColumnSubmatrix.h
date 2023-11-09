@@ -9,6 +9,11 @@
 #include "mipworkshop2024/Submatrix.h"
 #include "mipworkshop2024/presolve/PostSolveStack.h"
 
+struct TUSettings{
+    bool doDowngrade; //downgrade binary/integer variables to implied integers?
+    VariableType writeType; //What type to write the implied integers as?
+};
+
 enum class TUColumnType{
 	INTEGRAL_FIXED,
 	INTEGRAL_EITHER,
@@ -18,11 +23,12 @@ enum class TUColumnType{
 class TUColumnSubmatrixFinder
 {
 public:
-	explicit TUColumnSubmatrixFinder(Problem& problem);
+	explicit TUColumnSubmatrixFinder(Problem& problem,const TUSettings& settings);
 	std::vector<TotallyUnimodularColumnSubmatrix> computeTUSubmatrices();
 
 
 private:
+    TUSettings settings;
 	Problem& problem;
 	SparseMatrix rowMatrix;
 

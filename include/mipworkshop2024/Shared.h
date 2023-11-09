@@ -7,6 +7,8 @@
 
 #include <string>
 #include <cmath>
+#include <optional>
+#include <vector>
 
 using index_t = std::size_t;
 static constexpr index_t INVALID = std::numeric_limits<std::size_t>::max();
@@ -37,4 +39,22 @@ inline bool isFeasGreaterOrEqualSum(double value, double other){
 inline bool isFeasLessOrEqualSum(double value, double other){
   return value-sumFeasTol <= other;
 }
+
+struct Rat64{
+    long int nominator;
+    long int denominator;
+};
+
+std::optional<Rat64> realToRational(double value,
+                                    double minDelta,
+                                    double maxDelta,
+                                    long int maxDenom);
+
+std::optional<double> calculateIntegralScalar(const std::vector<double>& values,
+                                              double minDelta,
+                                              double maxDelta,
+                                              long int maxDenom,
+                                              double maxScale);
+
+
 #endif //MIPWORKSHOP2024_SRC_SHARED_H

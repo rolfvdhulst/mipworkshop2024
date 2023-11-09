@@ -7,16 +7,22 @@
 
 #include "PostSolveStack.h"
 #include "mipworkshop2024/Problem.h"
+#include "TUColumnSubmatrix.h"
 
 class Presolver
 {
 public:
 	Presolver() = default;
-	void doPresolve(const Problem& problem);
+	void doPresolve(const Problem& problem, const TUSettings& settings);
 	[[nodiscard]] const Problem& presolvedProblem() const;
 	[[nodiscard]] const PostSolveStack& postSolveStack() const;
+
+    std::size_t numUpgraded = 0;
+    std::size_t numDowngraded = 0;
 private:
-    void findTUColumnSubmatrix();
+    void findTUColumnSubmatrix(const TUSettings& settings);
+
+
 	Problem problem;
 	PostSolveStack stack;
 };

@@ -7,6 +7,7 @@
 
 #include "Problem.h"
 #include "ExternalSolution.h"
+#include "mipworkshop2024/presolve/PostSolveStack.h"
 #include <optional>
 #include <fstream>
 #include <filesystem>
@@ -24,4 +25,9 @@ std::optional<Problem> problemFromCompressedMPSStream(std::istream& stream);
 bool writeMPSFile(const Problem& problem,const std::filesystem::path& path);
 bool problemToStream(const Problem& problem,std::ostream& stream);
 bool problemToStreamCompressed(const Problem&, std::ostream& stream);
+
+bool writePostSolveStackFile(const PostSolveStack& stack, const std::filesystem::path& path);
+bool postSolveStackToStream(const PostSolveStack& stack, std::ostream& stream);
+std::optional<PostSolveStack> postSolveStackFromStream(std::istream& stream);
+
 #endif //MIPWORKSHOP2024_SRC_IO_H

@@ -26,6 +26,9 @@ struct SolveStatistics
 	bool isInfeasible;
 
 	std::size_t numTUImpliedColumns;
+    std::size_t numUpgradedColumns;
+    std::size_t numDowngradedColumns;
+    VariableType variableWriteType;
 	double TUDetectionTime;
 
 	std::size_t numBinaryAfterPresolve;

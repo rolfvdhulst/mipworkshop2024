@@ -104,3 +104,33 @@ ExternalSolution Problem::convertSolution(const Solution& solution) const
 	}
 	return externalSol;
 }
+
+void Problem::scale(const std::vector<double> &rowScale, const std::vector<double> &colScale) {
+    assert(rowScale.size() == numRows());
+    for(index_t i = 0; i < numRows(); ++i){
+        double scale = rowScale[i];
+        if(lhs[i] != -infinity){
+            lhs[i] *= scale;
+        }
+        if(rhs[i] != infinity){
+            rhs[i] *= scale;
+        }
+    }
+
+    for(index_t i = 0; i < numCols(); ++i){
+        assert(colScale[i] != 0.0);
+        if(colType[i] == VariableType::CONTINUOUS){
+            if(lb[i] != -infinity){
+                lb[i] /= colScale[i];
+            }
+            if(ub[i] != infinity){
+                ub[i] /= colScale[i];
+            }
+            obj[i] *= colScale[i];
+        }else{
+            assert(colScale[i] == 1.0);
+        }
+    }
+    matrix.scale(rowScale,colScale);
+
+}
