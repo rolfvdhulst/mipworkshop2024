@@ -31,7 +31,7 @@ std::optional<Problem> readProblem(const std::string &path) {
 }
 
 bool processProblem(const Problem& problem, const std::filesystem::path& path, const Configuration& config){
-    double totalTimeLimit = 5.0;
+    double totalTimeLimit = 3600.0;
     ProblemLogData logData;
     if(!config.settings.has_value()){
         //baseline config
@@ -161,7 +161,7 @@ bool processProblem(const Problem& problem, const std::filesystem::path& path, c
 int main(int argc, char **argv) {
     std::vector<std::string> args(argv, argv + argc);
 
-    if (args.size() != 2) {
+    if (args.size() != 3) {
         std::cerr << "Wrong number of arguments!\n";
         return EXIT_FAILURE;
     }
@@ -169,8 +169,7 @@ int main(int argc, char **argv) {
     if (!problem.has_value()) {
         return EXIT_FAILURE;
     }
-	std::filesystem::path path(args[1]);
-	path = path.parent_path().parent_path();
+	std::filesystem::path path(args[2]);
 
     std::vector<Configuration> configs = {
             Configuration{

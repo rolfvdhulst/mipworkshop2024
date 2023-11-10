@@ -1,10 +1,13 @@
 #!/bin/bash
+
+instanceFolder="$1"
+softwareFolder="$2"
 input="$PWD/data/first_round.test"
 
 N=6
 while IFS= read -r line
 do
-  (./build/apps/runIntegratedSCIP "/home/rolf/math/mipworkshop2024/data/instances/$line.mps.gz";)&
+  ("$2"/build/apps/runIntegratedSCIP "$instanceFolder/$line.mps.gz" "$PWD/data/"; )&
   if [[ $(jobs -r -p | wc -l) -ge $N ]]; then
     wait -n
   fi
