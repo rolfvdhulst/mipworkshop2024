@@ -6,6 +6,7 @@
 #include <scip/scip.h>
 #include <scip/scipdefplugins.h>
 #include <scip/cons.h>
+#include <scip/stat.h>
 
 #include <iostream>
 
@@ -26,8 +27,8 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
 
   /* initialize SCIP */
   SCIP_CALL( SCIPcreate(&scip) );
-  SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0));
-  //SCIPprintVersion(scip,stdout);
+//  SCIP_CALL( SCIPsetIntParam(scip, "display/verblevel", 0));
+  SCIPprintVersion(scip,stdout);
 
   /* include default SCIP plugins */
   SCIP_CALL( SCIPincludeDefaultPlugins(scip) );
@@ -139,8 +140,15 @@ SCIP_RETCODE scipDoSolveProblem(const Problem& problem, SCIPRunResult& result,
 	result.statistics.numConsBeforePresolve = SCIPgetNOrigConss(scip);
 	result.statistics.TUDetectionTime = 0.0;
 
-
-//	SCIP_CALL(SCIPprintStatistics(scip,stdout));
+//This hacky thing only compiles in release because SCIP doesn't expose this api...
+#ifdef NDEBUG
+    result.statistics.primalDualIntegral = scip->stat->primaldualintegral;
+    result.statistics.avgPDI = scip->stat->primaldualintegral / SCIPgetSolvingTime(scip);
+#else
+    result.statistics.primalDualIntegral = infinity;
+    result.statistics.avgPDI = infinity;
+#endif
+    SCIP_CALL(SCIPprintStatistics(scip,stdout));
   for(SCIP_VAR *  var : vars){
     SCIP_CALL(SCIPreleaseVar(scip,&var));
   }

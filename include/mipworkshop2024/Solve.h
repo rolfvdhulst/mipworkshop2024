@@ -45,6 +45,8 @@ struct SolveStatistics
 	std::size_t numConsBeforePresolve;
 
 	std::size_t numSolutions;
+    double primalDualIntegral;
+    double avgPDI;
 };
 struct SCIPRunResult
 {

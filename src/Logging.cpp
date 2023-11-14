@@ -31,6 +31,9 @@ nlohmann::json statisticsToJson(const SolveStatistics& stats){
 	 values["isUnbounded"] = stats.isUnbounded;
 	 values["isInfeasible"] = stats.isInfeasible;
 	 values["TUDetectionTime"] = stats.TUDetectionTime;
+
+     values["primalDualIntegral"] = stats.primalDualIntegral;
+     values["avgPDI"] = stats.avgPDI;
 	return values;
 }
 SolveStatistics statisticsFromJson(const nlohmann::json& json){
@@ -58,6 +61,16 @@ SolveStatistics statisticsFromJson(const nlohmann::json& json){
 	stats.isInfeasible = json["isInfeasible"];
 	stats.isUnbounded = json["isUnbounded"];
 	stats.TUDetectionTime = json["TUDetectionTime"];
+    if(json.contains("primalDualIntegral")){
+        stats.primalDualIntegral = json["primalDualIntegral"];
+    }else{
+        stats.primalDualIntegral = infinity;
+    }
+    if(json.contains("avgPDI")){
+        stats.avgPDI = json["avgPDI"];
+    }else{
+        stats.avgPDI = infinity;
+    }
 	return stats;
 }
 nlohmann::json ProblemLogData::toJson() const

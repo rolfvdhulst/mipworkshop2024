@@ -22,3 +22,7 @@ target_link_libraries(mpsConvert
 add_executable(checkSolutions CheckSolutions.cpp)
 target_link_libraries(checkSolutions
         PUBLIC mipworkshop2024)
+
+add_executable(compareResults CompareResults.cpp)
+target_link_libraries(compareResults
+        PUBLIC mipworkshop2024)
