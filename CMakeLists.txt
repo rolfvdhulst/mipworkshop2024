@@ -8,7 +8,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
 
 find_package(Boost COMPONENTS iostreams REQUIRED)
-find_package(SCIP REQUIRED)
+find_package(SCIP REQUIRED PATHS /home/hulstrp/dependencies/ NO_DEFAULT_PATH)
 
 add_library(mipworkshop2024
         src/Problem.cpp
