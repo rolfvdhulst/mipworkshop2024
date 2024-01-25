@@ -89,60 +89,58 @@ bool processProblem(const Problem& problem, const std::filesystem::path& path, c
         logData.detectionStatistics = detectionStats;
         logData.writeType = config.settings->writeType;
         logData.doDownGrade = config.settings->doDowngrade;
-        if(presolver.postSolveStack().totallyUnimodularColumnSubmatrixFound()){
-            auto result = solveProblemSCIP(presolvedProblem,reducedTimeLimit);
-            if(!result.has_value()){
-                std::cerr<<"Error during solving problem!\n";
+
+        auto result = solveProblemSCIP(presolvedProblem, reducedTimeLimit);
+        if (!result.has_value()) {
+            std::cerr << "Error during solving problem!\n";
+            return false;
+        }
+        result->statistics.TUDetectionTime = presolveTime;
+        result->statistics.timeTaken += presolveTime;
+        result->statistics.numTUImpliedColumns = 0;
+        logData.numUpgraded = presolver.numUpgraded;
+        logData.numDowngraded = presolver.numDowngraded;
+
+
+        for (const auto &reduction: presolver.postSolveStack().reductions) {
+            result->statistics.numTUImpliedColumns += reduction.submatColumns.size();
+        }
+
+        if (result->statistics.numSolutions > 0) {
+            auto convertedSol = problem.convertExternalSolution(result->solution);
+            if (!convertedSol.has_value()) {
+                std::cout << "Solution cannot be interpreted!\n";
                 return false;
             }
-            result->statistics.TUDetectionTime = presolveTime;
-            result->statistics.timeTaken += presolveTime;
-            result->statistics.numTUImpliedColumns = 0;
-            logData.numUpgraded = presolver.numUpgraded;
-            logData.numDowngraded = presolver.numDowngraded;
-
-
-            for(const auto& reduction : presolver.postSolveStack().reductions){
-                result->statistics.numTUImpliedColumns += reduction.submatColumns.size();
-            }
-
-            if(result->statistics.numSolutions > 0 ){
-                auto convertedSol = problem.convertExternalSolution(result->solution);
-                if (!convertedSol.has_value())
-                {
-                    std::cout << "Solution cannot be interpreted!\n";
+            if (!problem.isFeasible(convertedSol.value())) {
+                std::cout << "Recovering solution in postSolve\n";
+                auto recovered = doPostSolve(problem, convertedSol.value(), presolver.postSolveStack());
+                if (!recovered.has_value()) {
                     return false;
                 }
-                if(!problem.isFeasible(convertedSol.value())){
-                    std::cout<<"Recovering solution in postSolve\n";
-                    auto recovered = doPostSolve(problem,convertedSol.value(),presolver.postSolveStack());
-                    if(!recovered.has_value()){
-                        return false;
-                    }
-                    if(!problem.isFeasible(recovered.value())){
-                        std::cout<<"Did not recover solution!\n";
-                        return false;
-                    }
-                    convertedSol = recovered;
-
-                    result->statistics.primalBound = problem.computeObjective(convertedSol.value());
-                    std::cout<<"Recovered solution with objective: "<<result->statistics.primalBound<<"\n";
-                }
-                auto convertedSoLExternal = problem.convertSolution(*convertedSol);
-                auto solPath = path;
-                solPath += "integratedSolutions/";
-                solPath += problem.name;
-                solPath += "_";
-                solPath += config.name;
-                solPath += ".sol";
-                std::ofstream logFile(solPath);
-                if(!solToStream(convertedSoLExternal, logFile)){
-                    std::cout << "Could not write solution!\n";
+                if (!problem.isFeasible(recovered.value())) {
+                    std::cout << "Did not recover solution!\n";
                     return false;
                 }
+                convertedSol = recovered;
+
+                result->statistics.primalBound = problem.computeObjective(convertedSol.value());
+                std::cout << "Recovered solution with objective: " << result->statistics.primalBound << "\n";
             }
-            logData.solveStatistics = result->statistics;
+            auto convertedSoLExternal = problem.convertSolution(*convertedSol);
+            auto solPath = path;
+            solPath += "integratedSolutions/";
+            solPath += problem.name;
+            solPath += "_";
+            solPath += config.name;
+            solPath += ".sol";
+            std::ofstream logFile(solPath);
+            if (!solToStream(convertedSoLExternal, logFile)) {
+                std::cout << "Could not write solution!\n";
+                return false;
+            }
         }
+        logData.solveStatistics = result->statistics;
     }
 
     {

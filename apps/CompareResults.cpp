@@ -238,7 +238,7 @@ int main(int argc, char ** argv){
     std::cout<<"Score (Total PDI)\n";
     std::cout<<baseScoreMean<<", "<<fullScoreMean<<", "<<partialScoreMean<<", "<<contScoreMean<<", "<<intScoreMean<<"\n";
 
-    double gapLimit = 0.01;
+    double gapLimit = 0.5;
     std::size_t baseGapCount5 = gapCount(baseRelGap,gapLimit);
     std::size_t fullGapCount5 = gapCount(fullRelGap,gapLimit);
     std::size_t partialGapCount5 = gapCount(partialRelGap,gapLimit);
