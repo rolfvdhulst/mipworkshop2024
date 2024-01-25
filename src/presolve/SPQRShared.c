@@ -1,7 +1,3 @@
-//
-// Created by rolf on 18-07-22.
-//
-
 #include "mipworkshop2024/presolve/SPQRShared.h"
 
 #ifndef NDEBUG
@@ -9,7 +5,7 @@
 #include <limits.h>
 #endif
 
-SPQR_ERROR spqrCreateEnvironment(SPQR** pSpqr){
+SPQR_ERROR SPQRcreateEnvironment(SPQR** pSpqr){
     *pSpqr = (SPQR*) malloc(sizeof(SPQR));
     SPQR * env = *pSpqr;
     if(!env){
@@ -18,7 +14,7 @@ SPQR_ERROR spqrCreateEnvironment(SPQR** pSpqr){
     env->output = stdout;
     return SPQR_OKAY;
 }
-SPQR_ERROR spqrFreeEnvironment(SPQR** pSpqr){
+SPQR_ERROR SPQRfreeEnvironment(SPQR** pSpqr){
     if(!pSpqr){
         return SPQR_ERROR_MEMORY;
     }
@@ -76,17 +72,66 @@ void implSPQRfreeBlock(__attribute__((unused)) SPQR * env, void **ptr){
     free(*ptr);
     *ptr = NULL;
 }
-bool rowIsInvalid(row_idx row) {
-    return row == INVALID_ROW;
+
+
+bool SPQRnodeIsInvalid(spqr_node node) {
+    return node < 0;
 }
 
-bool rowIsValid(row_idx row){
-    return !rowIsInvalid(row);
+bool SPQRnodeIsValid(spqr_node node) {
+    return !SPQRnodeIsInvalid(node);
+}
+bool SPQRmemberIsInvalid(spqr_member member) {
+    return member < 0;
+}
+bool SPQRmemberIsValid(spqr_member member) {
+    return !SPQRmemberIsInvalid(member);
+}
+bool SPQRedgeIsInvalid(spqr_edge edge) {
+    return edge == SPQR_INVALID_EDGE;
+}
+bool SPQRedgeIsValid(spqr_edge edge){
+    return !SPQRedgeIsInvalid(edge);
+}
+bool SPQRarcIsInvalid(spqr_arc arc) {
+    return arc < 0;
+}
+bool SPQRarcIsValid(spqr_arc arc){
+    return !SPQRarcIsInvalid(arc);
 }
 
-bool colIsInvalid(col_idx col) {
-    return col == INVALID_COL;
+bool SPQRrowIsInvalid(spqr_row row){
+    return row == SPQR_INVALID_ROW;
 }
-bool colIsValid(col_idx col){
-    return !colIsInvalid(col);
+bool SPQRrowIsValid(spqr_row row){
+    return !SPQRrowIsInvalid(row);
+}
+bool SPQRcolIsInvalid(spqr_col col){
+    return col == SPQR_INVALID_COL;
+}
+bool SPQRcolIsValid(spqr_col col){
+    return !SPQRcolIsInvalid(col);
+}
+
+bool SPQRelementIsRow(spqr_element element){
+    return element < 0;
+}
+bool SPQRelementIsColumn(spqr_element element){
+    return !SPQRelementIsRow(element);
+}
+spqr_row SPQRelementToRow(spqr_element element){
+    assert(SPQRelementIsRow(element));
+    return (spqr_row) (-element - 1);
+}
+spqr_element SPQRrowToElement(spqr_row row){
+    assert(SPQRrowIsValid(row));
+    return (spqr_element) -row-1;
+}
+spqr_col SPQRelementToColumn(spqr_element element){
+    assert(SPQRelementIsColumn(element));
+    return (spqr_col) element;
+}
+spqr_element SPQRcolumnToElement(spqr_col column){
+    assert(SPQRcolIsValid(column));
+    return (spqr_element) column;
 }

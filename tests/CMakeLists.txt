@@ -2,7 +2,9 @@
 find_package(GTest REQUIRED)
 add_executable(mipworkshop2024_tests
         test_main.cpp
-        MPSReaderTest.cpp)
+        MPSReaderTest.cpp
+        networkAdditionTest.cpp
+        TestHelpers.cpp)
 
 target_link_libraries(mipworkshop2024_tests
         PUBLIC mipworkshop2024

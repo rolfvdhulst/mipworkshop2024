@@ -8,10 +8,12 @@
 #include "mipworkshop2024/Problem.h"
 #include "mipworkshop2024/Submatrix.h"
 #include "mipworkshop2024/presolve/PostSolveStack.h"
+#include "mipworkshop2024/Logging.h"
 
 struct TUSettings{
     bool doDowngrade; //downgrade binary/integer variables to implied integers?
     VariableType writeType; //What type to write the implied integers as?
+    bool dynamic; //Dynamically decide if we should up/downgrade to
 };
 
 enum class TUColumnType{
@@ -25,8 +27,7 @@ class TUColumnSubmatrixFinder
 public:
 	explicit TUColumnSubmatrixFinder(Problem& problem,const TUSettings& settings);
 	std::vector<TotallyUnimodularColumnSubmatrix> computeTUSubmatrices();
-
-
+    [[nodiscard]] std::vector<DetectionStatistics> statistics() const;
 private:
     TUSettings settings;
 	Problem& problem;
@@ -40,6 +41,9 @@ private:
 
 	std::vector<bool> isNonIntegralRow;
 	std::vector<index_t> nonIntegralRows;
+
+    std::vector<DetectionStatistics> detectionStatistics;
+
 	void computeRowAndColumnTypes();
 	[[nodiscard]] TotallyUnimodularColumnSubmatrix computeImplyingColumns(const Submatrix& submatrix) const;
 	std::vector<TotallyUnimodularColumnSubmatrix> mixedComputeTUSubmatrices();
@@ -53,7 +57,7 @@ private:
 			const std::vector<bool>& componentValid,
 			const std::vector<long>& nRowEntries,
 			const std::vector<long>& nColEntries,
-			const std::vector<long>& rowComponents) const;
+			const std::vector<long>& rowComponents);
     [[nodiscard]] Submatrix computeNetworkSubmatrix(
             bool transposed,
             const std::vector<Component>& components,

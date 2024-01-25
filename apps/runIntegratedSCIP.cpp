@@ -75,7 +75,7 @@ bool processProblem(const Problem& problem, const std::filesystem::path& path, c
     }else{
         auto presolveStart = std::chrono::high_resolution_clock::now();
         Presolver presolver;
-        presolver.doPresolve(problem, config.settings.value());
+        auto detectionStats = presolver.doPresolve(problem, config.settings.value());
         auto presolvedProblem = presolver.presolvedProblem();
         std::size_t numFoundColumns = 0;
         for(const auto& reduction : presolver.postSolveStack().reductions){
@@ -86,6 +86,7 @@ bool processProblem(const Problem& problem, const std::filesystem::path& path, c
         std::cout<<"Presolving took: "<<presolveTime<<" seconds\n";
         double reducedTimeLimit = std::max(totalTimeLimit - presolveTime, 1.0);
 
+        logData.detectionStatistics = detectionStats;
         logData.writeType = config.settings->writeType;
         logData.doDownGrade = config.settings->doDowngrade;
         if(presolver.postSolveStack().totallyUnimodularColumnSubmatrixFound()){
@@ -129,7 +130,7 @@ bool processProblem(const Problem& problem, const std::filesystem::path& path, c
                 }
                 auto convertedSoLExternal = problem.convertSolution(*convertedSol);
                 auto solPath = path;
-                solPath += "/integratedSolutions/";
+                solPath += "integratedSolutions/";
                 solPath += problem.name;
                 solPath += "_";
                 solPath += config.name;
@@ -174,34 +175,38 @@ int main(int argc, char **argv) {
     std::vector<Configuration> configs = {
             Configuration{
                     .name = "b",
-                    .settings = std::nullopt
+                    .settings = std::nullopt,
             },
             Configuration{
                     .name = "c",
                     .settings = TUSettings{
                             .doDowngrade = true,
-                            .writeType = VariableType::IMPLIED_INTEGER
+                            .writeType = VariableType::IMPLIED_INTEGER,
+                            .dynamic = false
                     }
             },
             Configuration{
                 .name = "d",
                 .settings = TUSettings{
                     .doDowngrade = false,
-                    .writeType = VariableType::IMPLIED_INTEGER
+                    .writeType = VariableType::IMPLIED_INTEGER,
+                    .dynamic = false
                 }
             },
             Configuration{
                 .name = "e",
                 .settings = TUSettings{
                     .doDowngrade = true,
-                    .writeType = VariableType::CONTINUOUS
+                    .writeType = VariableType::CONTINUOUS,
+                    .dynamic = false
                 }
             },
             Configuration{
                 .name = "f",
                 .settings = TUSettings{
                     .doDowngrade = false,
-                    .writeType = VariableType::INTEGER
+                    .writeType = VariableType::INTEGER,
+                    .dynamic = false
                 }
             }
     };

@@ -13,6 +13,7 @@ struct ProblemLogData {
     bool doDownGrade;
     VariableType writeType;
   std::optional<SolveStatistics> solveStatistics;
+  std::vector<DetectionStatistics> detectionStatistics;
 
   [[nodiscard]] nlohmann::json toJson() const;
   static ProblemLogData fromJson(const nlohmann::json& json);

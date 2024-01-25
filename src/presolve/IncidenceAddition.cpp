@@ -127,3 +127,13 @@ void IncidenceAddition::removeComponent(const std::vector<index_t>& rows, const 
 	}
 }
 
+std::size_t IncidenceAddition::numComponents() const {
+    std::size_t numComponents = 0;
+    for(std::size_t i = 0; i < containsDense.size(); ++i){
+        if(containsDense[i] && unionFind[i].representative < 0){
+            ++numComponents;
+        }
+    }
+    return numComponents;
+}
+

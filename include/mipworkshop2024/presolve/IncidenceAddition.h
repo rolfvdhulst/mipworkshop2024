@@ -58,7 +58,7 @@ private:
 		for(const Nonzero& nonzero : slice){
 			index_t secondaryIndex = nonzero.index();
 			if(!containsDense[secondaryIndex]) continue;
-			if (fabs(nonzero.value()) != 1.0) return false; //TODO; tolerance; yes/no?
+			if (fabs(nonzero.value()) != 1.0) return false;
 			if(numEntries >= 2){
 				return false; //A third entry means we have no way to add it
 			}
@@ -117,7 +117,7 @@ private:
 			//There can be at most two nonzeros in each of the contained submatrices columns
 			index_t secondary = nonzero.index();
 			if (!containsSparse[secondary]) continue;
-			if (fabs(nonzero.value()) != 1.0) return false; //TODO; tolerance; yes/no?
+			if (fabs(nonzero.value()) != 1.0) return false;
 			if (sparseDimNumNonzeros[secondary] >= 2) return false;
 			assert((sparseDimNumNonzeros[secondary] == 0) == (sparseDimInfo[secondary].lastDimRow == -1));
 			int componentPrimary = sparseDimInfo[secondary].lastDimRow;
@@ -231,6 +231,8 @@ public:
 	//Hacky method to remove. Assumes that the given rows/columns form one connected component in the current decomposition
 	void removeComponent(const std::vector<index_t>& rows, const std::vector<index_t>& columns);
 	[[nodiscard]] Submatrix createSubmatrix() const;
+
+    [[nodiscard]] std::size_t numComponents() const;
 
 };
 

@@ -13,14 +13,14 @@ class Presolver
 {
 public:
 	Presolver() = default;
-	void doPresolve(const Problem& problem, const TUSettings& settings);
+	std::vector<DetectionStatistics> doPresolve(const Problem& problem, const TUSettings& settings);
 	[[nodiscard]] const Problem& presolvedProblem() const;
 	[[nodiscard]] const PostSolveStack& postSolveStack() const;
 
     std::size_t numUpgraded = 0;
     std::size_t numDowngraded = 0;
 private:
-    void findTUColumnSubmatrix(const TUSettings& settings);
+    std::vector<DetectionStatistics> findTUColumnSubmatrix(const TUSettings& settings);
 
 
 	Problem problem;

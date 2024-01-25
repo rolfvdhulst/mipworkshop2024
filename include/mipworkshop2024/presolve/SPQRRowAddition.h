@@ -33,7 +33,7 @@ void freeNewRow(SPQR* env, SPQRNewRow ** pNewRow);
  * @param columns An array with the column indices of the nonzero entries of the row.
  * @param numColumns The number of nonzero entries of the row
  */
-SPQR_ERROR checkNewRow(Decomposition * dec, SPQRNewRow * newRow, row_idx row, const col_idx * columns, size_t numColumns);
+SPQR_ERROR checkNewRow(Decomposition * dec, SPQRNewRow * newRow, spqr_row row, const spqr_col * columns, size_t numColumns);
 /**
  * @brief Adds the most recently checked column from checkNewRow() to the Decomposition.
  * //TODO: specify (and implement) behavior in special cases (e.g. zero rows, rows with a single entry?)

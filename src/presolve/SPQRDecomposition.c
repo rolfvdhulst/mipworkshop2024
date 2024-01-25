@@ -5,8 +5,6 @@
 
 #include "mipworkshop2024/presolve/SPQRDecomposition.h"
 #include <assert.h>
-//TODO: all checks with mem... to num...? In which cases do we store contiguously?
-
 
 void swap_ints(int *a, int *b) {
     int temp = *a;
@@ -43,20 +41,20 @@ bool elementIsRow(spqr_element element){
 bool elementIsColumn(spqr_element element){
     return !elementIsRow(element);
 }
-row_idx elementToRow(spqr_element element){
+spqr_row elementToRow(spqr_element element){
     assert(elementIsRow(element));
-    return (row_idx) (-element - 1);
+    return (spqr_row) (-element - 1);
 }
-spqr_element rowToElement(row_idx row){
-    assert(rowIsValid(row));
+spqr_element rowToElement(spqr_row row){
+    assert(SPQRrowIsValid(row));
     return (spqr_element) -row-1;
 }
-col_idx elementToColumn(spqr_element element){
+spqr_col elementToColumn(spqr_element element){
     assert(elementIsColumn(element));
-    return (col_idx) element;
+    return (spqr_col) element;
 }
-spqr_element columnToElement(col_idx column){
-    assert(colIsValid(column));
+spqr_element columnToElement(spqr_col column){
+    assert(SPQRcolIsValid(column));
     return (spqr_element) column;
 }
 
@@ -354,37 +352,37 @@ spqr_element edgeGetElement(const Decomposition * dec, edge_id edge){
     return dec->edges[edge].element;
 }
 
-bool decompositionHasRow(Decomposition *dec, row_idx row){
-    assert( rowIsValid(row) && (int) row < dec->memRows);
+bool decompositionHasRow(Decomposition *dec, spqr_row row){
+    assert( SPQRrowIsValid(row) && (int) row < dec->memRows);
     assert(dec);
 
     return edgeIsValid(dec->rowEdges[row]);
 }
-bool decompositionHasCol(Decomposition *dec, col_idx col){
-    assert( colIsValid(col) && (int) col< dec->memColumns);
+bool decompositionHasCol(Decomposition *dec, spqr_col col){
+    assert( SPQRcolIsValid(col) && (int) col< dec->memColumns);
     assert(dec);
 
     return edgeIsValid(dec->columnEdges[col]);
 }
-void setDecompositionColumnEdge(Decomposition *dec, col_idx col, edge_id edge){
-    assert( colIsValid(col) && (int)col< dec->memColumns);
+void setDecompositionColumnEdge(Decomposition *dec, spqr_col col, edge_id edge){
+    assert( SPQRcolIsValid(col) && (int)col< dec->memColumns);
     assert(dec);
     assert(edgeIsValid(edge));
     dec->columnEdges[col] = edge;
 }
-void setDecompositionRowEdge(Decomposition *dec, row_idx row, edge_id edge){
-    assert( rowIsValid(row) && (int) row< dec->memRows);
+void setDecompositionRowEdge(Decomposition *dec, spqr_row row, edge_id edge){
+    assert( SPQRrowIsValid(row) && (int) row< dec->memRows);
     assert(dec);
     assert(edgeIsValid(edge));
     dec->rowEdges[row] = edge;
 }
-edge_id getDecompositionColumnEdge(const Decomposition *dec, col_idx col){
-    assert( colIsValid(col) && (int) col< dec->memColumns);
+edge_id getDecompositionColumnEdge(const Decomposition *dec, spqr_col col){
+    assert( SPQRcolIsValid(col) && (int) col< dec->memColumns);
     assert(dec);
     return dec->columnEdges[col];
 }
-edge_id getDecompositionRowEdge(const Decomposition *dec, row_idx row){
-    assert( rowIsValid(row) && (int) row < dec->memRows);
+edge_id getDecompositionRowEdge(const Decomposition *dec, spqr_row row){
+    assert( SPQRrowIsValid(row) && (int) row < dec->memRows);
     assert(dec);
     return dec->rowEdges[row];
 }
@@ -464,10 +462,7 @@ void freeDecomposition(Decomposition **pDec) {
     SPQRfreeBlockArray(dec->env, &dec->members);
     SPQRfreeBlockArray(dec->env, &dec->edges);
 
-
-
     SPQRfreeBlock(dec->env, pDec);
-
 }
 
 SPQR_ERROR createEdge(Decomposition *dec, member_id member, edge_id *pEdge) {
@@ -508,7 +503,7 @@ SPQR_ERROR createEdge(Decomposition *dec, member_id member, edge_id *pEdge) {
 
     return SPQR_OKAY;
 }
-SPQR_ERROR createRowEdge(Decomposition *dec, member_id member, edge_id *pEdge, row_idx row){
+SPQR_ERROR createRowEdge(Decomposition *dec, member_id member, edge_id *pEdge, spqr_row row){
     SPQR_CALL(createEdge(dec,member,pEdge));
     setDecompositionRowEdge(dec,row,*pEdge);
     addEdgeToMemberEdgeList(dec,*pEdge,member);
@@ -516,7 +511,7 @@ SPQR_ERROR createRowEdge(Decomposition *dec, member_id member, edge_id *pEdge, r
 
     return SPQR_OKAY;
 }
-SPQR_ERROR createColumnEdge(Decomposition *dec, member_id member, edge_id *pEdge, col_idx column){
+SPQR_ERROR createColumnEdge(Decomposition *dec, member_id member, edge_id *pEdge, spqr_col column){
     SPQR_CALL(createEdge(dec,member,pEdge));
     setDecompositionColumnEdge(dec,column,*pEdge);
     addEdgeToMemberEdgeList(dec,*pEdge,member);
@@ -843,7 +838,7 @@ edge_id getPreviousMemberEdge(const Decomposition *dec, edge_id edge){
     edge = dec->edges[edge].edgeListNode.previous;
     return edge;
 }
-SPQR_ERROR createStandaloneParallel(Decomposition *dec, col_idx * columns, int num_columns, row_idx row, member_id * pMember){
+SPQR_ERROR createStandaloneParallel(Decomposition *dec, spqr_col * columns, int num_columns, spqr_row row, member_id * pMember){
     member_id member;
     MemberType type = num_columns <= 1 ? LOOP : PARALLEL;
     SPQR_CALL(createMember(dec,type,&member));
@@ -863,7 +858,7 @@ SPQR_ERROR createStandaloneParallel(Decomposition *dec, col_idx * columns, int n
 }
 
 //TODO: fix tracking connectivity more cleanly, should not be left up to the algorithms ideally
-SPQR_ERROR createConnectedParallel(Decomposition *dec, col_idx * columns, int num_columns, row_idx row, member_id * pMember){
+SPQR_ERROR createConnectedParallel(Decomposition *dec, spqr_col * columns, int num_columns, spqr_row row, member_id * pMember){
     member_id member;
     SPQR_CALL(createMember(dec,PARALLEL,&member));
 
@@ -879,7 +874,7 @@ SPQR_ERROR createConnectedParallel(Decomposition *dec, col_idx * columns, int nu
     return SPQR_OKAY;
 }
 
-SPQR_ERROR createStandaloneSeries(Decomposition *dec, row_idx * rows, int numRows, col_idx col, member_id * pMember){
+SPQR_ERROR createStandaloneSeries(Decomposition *dec, spqr_row * rows, int numRows, spqr_col col, member_id * pMember){
     member_id member;
 	MemberType type = numRows <= 1 ? LOOP : SERIES;
     SPQR_CALL(createMember(dec,type,&member));
@@ -895,7 +890,7 @@ SPQR_ERROR createStandaloneSeries(Decomposition *dec, row_idx * rows, int numRow
     ++dec->numConnectedComponents;
     return SPQR_OKAY;
 }
-SPQR_ERROR createConnectedSeries(Decomposition *dec, row_idx * rows, int numRows, col_idx col, member_id * pMember){
+SPQR_ERROR createConnectedSeries(Decomposition *dec, spqr_row * rows, int numRows, spqr_col col, member_id * pMember){
     member_id member;
     SPQR_CALL(createMember(dec,SERIES,&member));
 
@@ -989,7 +984,7 @@ edge_id getPreviousNodeEdge(Decomposition *dec, edge_id edge,node_id node){
 }
 
 
-void process_edge(row_idx * fundamental_cycle_edges, int * num_cycle_edges, edge_id * callStack, int * callStackSize, edge_id edge,const Decomposition * dec){
+void process_edge(spqr_row * fundamental_cycle_edges, int * num_cycle_edges, edge_id * callStack, int * callStackSize, edge_id edge,const Decomposition * dec){
     assert(edgeIsTree(dec,edge));
     if(!edgeIsMarker(dec,edge)){
         member_id current_member = findEdgeMemberNoCompression(dec,edge);
@@ -1013,7 +1008,7 @@ void process_edge(row_idx * fundamental_cycle_edges, int * num_cycle_edges, edge
     }
 }
 
-int decompositionGetFundamentalCycleRows(Decomposition *dec, col_idx column, row_idx * output){
+int decompositionGetFundamentalCycleRows(Decomposition *dec, spqr_col column, spqr_row * output){
     edge_id edge = getDecompositionColumnEdge(dec, column);
     if(edgeIsInvalid(edge)){
         return 0;
@@ -1170,7 +1165,7 @@ int qsort_integer_comparison (const void * a, const void * b)
     }
 }
 
-bool checkCorrectnessColumn(Decomposition * dec, col_idx column, row_idx * column_rows, int num_rows, row_idx * computed_column_storage){
+bool checkCorrectnessColumn(Decomposition * dec, spqr_col column, spqr_row * column_rows, int num_rows, spqr_row * computed_column_storage){
     int num_found_rows = decompositionGetFundamentalCycleRows(dec,column,computed_column_storage);
 
     if(num_found_rows != num_rows){
@@ -1179,8 +1174,8 @@ bool checkCorrectnessColumn(Decomposition * dec, col_idx column, row_idx * colum
     if(num_rows == 0){
         return true;
     }
-    qsort(computed_column_storage,(size_t) num_rows,sizeof(row_idx),qsort_integer_comparison);
-    qsort(column_rows            ,(size_t) num_rows,sizeof(row_idx),qsort_integer_comparison);
+    qsort(computed_column_storage,(size_t) num_rows,sizeof(spqr_row),qsort_integer_comparison);
+    qsort(column_rows            ,(size_t) num_rows,sizeof(spqr_row),qsort_integer_comparison);
 
     for (int i = 0; i < num_rows; ++i) {
         if(column_rows[i] != computed_column_storage[i]){
@@ -1478,20 +1473,20 @@ void removeEmptyMember(Decomposition *dec,member_id member){
 	//TODO: mark as unused / free for new allocations
 }
 
-void removeComponents(Decomposition *dec,const row_idx * componentRows, size_t numRows,const col_idx  * componentCols, size_t numCols){
+void removeComponents(Decomposition *dec,const spqr_row * componentRows, size_t numRows,const spqr_col  * componentCols, size_t numCols){
     //TODO: remove edge, node, member data and update numConnectedComponents correctly.
     //The below just removes the 'link' but not the internal datastructures.
     //This is sufficient for our purposes, as long as we do not re-introduce any of the 'negated' rows/columns back into the decomposition.
 
     for (int i = 0; i < numRows; ++i) {
-        row_idx row = componentRows[i];
+        spqr_row row = componentRows[i];
         if(edgeIsValid(dec->rowEdges[row])){
             dec->rowEdges[row] = INVALID_EDGE;
         }
     }
 
     for (int i = 0; i < numCols; ++i) {
-        col_idx col = componentCols[i];
+        spqr_col col = componentCols[i];
         if(edgeIsValid(dec->columnEdges[col])){
             dec->columnEdges[col] = INVALID_EDGE;
         }

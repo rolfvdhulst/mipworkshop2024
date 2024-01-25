@@ -128,8 +128,13 @@ int main(int argc, char ** argv){
     std::vector<double> contScore;
     std::vector<double> intScore;
 
+    std::vector<double> baseNumImpliedAfterPresolve;
+    std::vector<double> fullNumImpliedAfterPresolve;
+    std::vector<double> partialNumImpliedAfterPresolve;
+    std::vector<double> contNumImpliedAfterPresolve;
+    std::vector<double> intNumImpliedAfterPresolve;
+
     for(const auto& pair : baseline){
-        if(pair.first == "brazil3" || pair.first == "irish-electricity" || pair.first == "graph20-20-1rand") continue;
         //TODO: these instances have problems? (brazil3; bug reported, irish-electricity ? graph20-20-1rand?
         const auto& baseRes = pair.second;
         const auto& fullRes = full.at(pair.first);
@@ -177,13 +182,20 @@ int main(int argc, char ** argv){
         contScore.push_back(totalPrimalIntegral(contStats));
         intScore.push_back(totalPrimalIntegral(intStats));
 
+        baseNumImpliedAfterPresolve.push_back(baseStats.numImpliedAfterPresolve);
+        fullNumImpliedAfterPresolve.push_back(fullStats.numImpliedAfterPresolve);
+        partialNumImpliedAfterPresolve.push_back(partialStats.numImpliedAfterPresolve);
+        contNumImpliedAfterPresolve.push_back(contStats.numImpliedAfterPresolve);
+        intNumImpliedAfterPresolve.push_back(intStats.numImpliedAfterPresolve);
+
     }
 
-    double baseMean = shiftedGeometricMean(baseSolveTimes,10);
-    double fullMean = shiftedGeometricMean(fullSolveTimes,10);
-    double partialMean = shiftedGeometricMean(partialSolveTimes,10);
-    double contMean = shiftedGeometricMean(contSolveTimes,10);
-    double intMean = shiftedGeometricMean(intSolveTimes,10);
+    double timeShift = 10.0;
+    double baseMean = shiftedGeometricMean(baseSolveTimes,timeShift);
+    double fullMean = shiftedGeometricMean(fullSolveTimes,timeShift);
+    double partialMean = shiftedGeometricMean(partialSolveTimes,timeShift);
+    double contMean = shiftedGeometricMean(contSolveTimes,timeShift);
+    double intMean = shiftedGeometricMean(intSolveTimes,timeShift);
 
     double nodeShift = 10.0;
     double nodeBase = shiftedGeometricMean(baseNodes,nodeShift);
@@ -205,6 +217,14 @@ int main(int argc, char ** argv){
     double partialScoreMean = shiftedGeometricMean(partialScore,scoreShift);
     double contScoreMean = shiftedGeometricMean(contScore,scoreShift);
     double intScoreMean = shiftedGeometricMean(intScore,scoreShift);
+
+    double impliedShift = 10;
+    double baseImpliedAfterPresolveMean = shiftedGeometricMean(baseNumImpliedAfterPresolve,impliedShift);
+    double fullImpliedAfterPresolveMean = shiftedGeometricMean(fullNumImpliedAfterPresolve,impliedShift);
+    double partialImpliedAfterPresolveMean = shiftedGeometricMean(partialNumImpliedAfterPresolve,impliedShift);
+    double contImpliedAfterPresolveMean = shiftedGeometricMean(contNumImpliedAfterPresolve,impliedShift);
+    double intImpliedAfterPresolveMean = shiftedGeometricMean(intNumImpliedAfterPresolve,impliedShift);
+
     std::cout<<"Baseline, Up+Down Implied Integer, Up Implied Integer, Down to Cont, Up to Integer\n";
     std::cout<<"Geometric mean time\n";
     std::cout<<baseMean<<", "<<fullMean<<", "<<partialMean<<", "<<contMean<<", "<<intMean<<"\n";
@@ -228,9 +248,18 @@ int main(int argc, char ** argv){
     std::cout<<"Number of problems with gap < "<<gapLimit*100.0 <<"% ( out of "<<baseRelGap.size()<<" )\n";
     std::cout<<baseGapCount5<<", "<< fullGapCount5<<", "<< partialGapCount5 <<", "<< contGapCount5 <<", "<< intGapCount5<<"\n";
 
+    std::cout<<"Number of implied integer variables\n";
+    std::cout<<baseImpliedAfterPresolveMean<<", ";
+    std::cout<<fullImpliedAfterPresolveMean<<", ";
+    std::cout<<partialImpliedAfterPresolveMean<<", ";
+    std::cout<<contImpliedAfterPresolveMean<<", ";
+    std::cout<<intImpliedAfterPresolveMean<<"\n";
+
+
+
+
 
     for(const auto& pair : baseline){
-        if(pair.first == "brazil3" || pair.first == "irish-electricity" || pair.first == "graph20-20-1rand") continue; //TODO: these instances have problems...
         const auto& baseRes = pair.second;
         const auto& fullRes = full.at(pair.first);
         const auto& partialRes = partial.at(pair.first);
@@ -252,7 +281,6 @@ int main(int argc, char ** argv){
 
     std::cout<<"\nGap for all instances\n";
     for(const auto& pair : baseline){
-        if(pair.first == "brazil3" || pair.first == "irish-electricity" || pair.first == "graph20-20-1rand") continue; //TODO: these instances have problems...
         const auto& baseRes = pair.second;
         const auto& fullRes = full.at(pair.first);
         const auto& partialRes = partial.at(pair.first);
@@ -273,7 +301,6 @@ int main(int argc, char ** argv){
     }
     std::cout<<"\nScore for all instances\n";
     for(const auto& pair : baseline){
-        if(pair.first == "brazil3" || pair.first == "irish-electricity" || pair.first == "graph20-20-1rand") continue; //TODO: these instances have problems...
         const auto& baseRes = pair.second;
         const auto& fullRes = full.at(pair.first);
         const auto& partialRes = partial.at(pair.first);
@@ -292,5 +319,45 @@ int main(int argc, char ** argv){
         std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< totalPrimalIntegral(baseStats)<<", "<<std::setw(8)<<totalPrimalIntegral(fullStats)<<", "
                  <<std::setw(8)<<totalPrimalIntegral(partialStats)<<", "<<std::setw(8)<<totalPrimalIntegral(contStats)<<", "<<std::setw(8)<<totalPrimalIntegral(intStats)<<"\n";
     }
+    std::cout<<"\n Detection time for all instances\n";
+    for(const auto& pair : baseline){
+        const auto& baseRes = pair.second;
+        const auto& fullRes = full.at(pair.first);
+        const auto& partialRes = partial.at(pair.first);
+        const auto& contRes = toContOnly.at(pair.first);
+        const auto& intRes = toIntOnly.at(pair.first);
+        if(!baseRes.solveStatistics.has_value()){
+            std::cout<<"No results: "<<pair.first<<"\n";
+            continue;
+        }
+        const auto& baseStats = baseRes.solveStatistics.value();
+        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
+        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
+        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
+        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
 
+        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.TUDetectionTime<<", "<<std::setw(8)<<fullStats.TUDetectionTime<<", "
+                 <<std::setw(8)<<partialStats.TUDetectionTime<<", "<<std::setw(8)<<contStats.TUDetectionTime<<", "<<std::setw(8)<<intStats.TUDetectionTime<<"\n";
+    }
+
+    std::cout<<"\n Num implied after presolve for all instances\n";
+    for(const auto& pair : baseline){
+        const auto& baseRes = pair.second;
+        const auto& fullRes = full.at(pair.first);
+        const auto& partialRes = partial.at(pair.first);
+        const auto& contRes = toContOnly.at(pair.first);
+        const auto& intRes = toIntOnly.at(pair.first);
+        if(!baseRes.solveStatistics.has_value()){
+            std::cout<<"No results: "<<pair.first<<"\n";
+            continue;
+        }
+        const auto& baseStats = baseRes.solveStatistics.value();
+        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
+        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
+        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
+        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
+
+        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<fullStats.numImpliedAfterPresolve<<", "
+                 <<std::setw(8)<<partialStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<contStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<intStats.numImpliedAfterPresolve<<"\n";
+    }
 }

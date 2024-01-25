@@ -6,7 +6,7 @@
 #include <iostream>
 #include "mipworkshop2024/presolve/TUColumnSubmatrix.h"
 #include "mipworkshop2024/presolve/IncidenceAddition.h"
-#include "mipworkshop2024/presolve/NetworkAddition.hpp"
+#include "mipworkshop2024/presolve/NetworkAdditionComplete.hpp"
 
 struct TUColumnSubmatrixFinder;
 TUColumnSubmatrixFinder::TUColumnSubmatrixFinder(Problem& problem, const TUSettings& settings)
@@ -83,6 +83,7 @@ void TUColumnSubmatrixFinder::computeRowAndColumnTypes()
 
 }
 std::vector<TotallyUnimodularColumnSubmatrix> TUColumnSubmatrixFinder::computeTUSubmatrices() {
+    detectionStatistics.clear();
 	//TODO: changing INTEGRAL_EITHER to INTEGRAL_FIXED can also be done only when we check to add INTEGRAL_EITHER
 	//This potentially saves a lot of row-wise iterations over the matrix
 
@@ -329,7 +330,6 @@ std::vector<TotallyUnimodularColumnSubmatrix> TUColumnSubmatrixFinder::mixedComp
 		submatrices.push_back(submatrix);
 		submatrices.push_back(computeNetworkSubmatrix(transposed,components,componentValid,rowComponent));
 	}
-
     auto best = std::max_element(submatrices.begin(),submatrices.end(),[](const auto& first, const auto& second){
         return first.columns.size() < second.columns.size();
     });
@@ -375,9 +375,12 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 		const std::vector<bool>& componentValid,
 		const std::vector<long>& nRowEntries,
 		const std::vector<long>& nColEntries,
-		const std::vector<long>& rowComponents) const
+		const std::vector<long>& rowComponents)
 {
-	IncidenceAddition addition(problem.numRows(),problem.numCols(),Submatrix::INIT_NONE,transposed);
+    DetectionStatistics stats;
+    auto tStart = std::chrono::high_resolution_clock::now();
+
+    IncidenceAddition addition(problem.numRows(),problem.numCols(),Submatrix::INIT_NONE,transposed);
 	std::vector<index_t> validComponents;
 	std::vector<index_t> invalidComponents;
 
@@ -386,6 +389,9 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 
 	std::vector<index_t> unitRowColumns;
 	std::vector<index_t> unitColRows;
+
+    index_t numErasedComponents = 0;
+
 	for(std::size_t i = 0; i < components.size(); ++i){
 		if(!componentValid[i])
 		{
@@ -436,6 +442,7 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 				unitRows.insert(unitRows.end(), componentUnitRows.begin(), componentUnitRows.end());
 				if (!transposed && componentUnitRows.size() == component.rows.size())
 				{
+                    ++numErasedComponents;
 					addition.removeComponent(component.rows,component.cols);
 					assert(component.cols.size() <= 1);
 					unitRowColumns.insert(unitRowColumns.end(),component.cols.begin(),component.cols.end());
@@ -454,6 +461,7 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 				unitCols.insert(unitCols.end(),componentUnitCols.begin(),componentUnitCols.end());
 				if (transposed && componentUnitCols.size() == component.cols.size())
 				{
+                    ++numErasedComponents;
 					addition.removeComponent(component.rows,component.cols);
 					assert(component.rows.size() <= 1);
 					unitColRows.insert(unitColRows.end(),component.rows.begin(),component.rows.end());
@@ -531,7 +539,13 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 			};
 			candidates.push_back(data);
 		}
-		//TODO: sort columns in some order
+
+        std::sort(candidates.begin(),candidates.end(),[](const ColCandidateData& first, const ColCandidateData& second){
+            if(first.nonzeros == second.nonzeros){
+                return first.obj < second.obj;
+            }
+            return first.nonzeros < second.nonzeros;
+        });
 
 		for(index_t row = 0; row < problem.numRows(); ++row){
 			if(!addition.containsRow(row) && !extendedInvalidRows[row] )
@@ -552,8 +566,11 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
     for(const auto& component : validComponents){
         contColumns += components[component].cols.size();
     }
-//    std::cout<<"Incidence: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns, "
-//             << unitCols.size()<< " unit columns." <<std::endl;
+
+    auto tEnd = std::chrono::high_resolution_clock::now();
+
+    std::cout<<"Incidence: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns, "
+             << unitCols.size()<< " unit columns, time: "<<(tEnd-tStart).count()/1e9<<" s"<<std::endl;
 
 	Submatrix submatrix = addition.createSubmatrix();
 	if(!transposed){
@@ -576,6 +593,25 @@ Submatrix TUColumnSubmatrixFinder::computeIncidenceSubmatrix(bool transposed,
 		}
 	}
 
+    stats.method = transposed ? "transposed incidence addition" : "incidence addition";
+    stats.timeTaken = (tEnd-tStart).count() /1e9;
+    stats.numUpgraded = contColumns;
+    stats.numDowngraded= expandedColumns;
+
+    stats.numErasedComponents = numErasedComponents;
+    stats.numComponents = addition.numComponents();
+    stats.numNodesTypeS = 0;
+    stats.numNodesTypeP = 0;
+    stats.numNodesTypeQ = 0;
+    stats.numNodesTypeR = 0;
+    stats.largestRNumArcs = 0;
+    stats.numTotalRArcs = 0;
+
+    stats.numRows = submatrix.rows.size();
+    stats.numColumns = submatrix.columns.size();
+
+    detectionStatistics.push_back(stats);
+
 	return submatrix;
 }
 
@@ -583,7 +619,11 @@ Submatrix TUColumnSubmatrixFinder::computeNetworkSubmatrix(bool transposed,
                                                            const std::vector<Component> &components,
                                                            const std::vector<bool>& componentValid,
                                                            const std::vector<long> &rowComponents) {
-    GraphicAddition addition(problem.numRows(),problem.numCols(),Submatrix::INIT_NONE,transposed);
+    auto tStart = std::chrono::high_resolution_clock::now();
+
+    NetworkAddition addition(problem.numRows(),problem.numCols(),Submatrix::INIT_NONE,transposed);
+
+    std::size_t numErasedComponents = 0;
 
     std::vector<index_t> invalidComponents;
     std::vector<index_t> validComponents;
@@ -593,51 +633,24 @@ Submatrix TUColumnSubmatrixFinder::computeNetworkSubmatrix(bool transposed,
             invalidComponents.push_back(i);
             continue;
         }
-        bool doColumnWise = true; //TODO: decide based on some metric
         bool good = true;
-        if(doColumnWise){
-            for(index_t row : component.rows){
-                bool added = addition.tryAddRow(row, MatrixSlice<EmptySlice>());
-                assert(added);
-            }
-            for(index_t col : component.cols){
-                if (!addition.tryAddCol(col, getColumnVector(col)))
-                {
-                    good = false;
-                    break;
-                }
-            }
-        }
-        else{
-            for(index_t col : component.cols){
-                bool added = addition.tryAddCol(col,MatrixSlice<EmptySlice>());
-                assert(added);
-            }
-            for(index_t row : component.rows){
-                if (!addition.tryAddRow(row, getRowVector(row)))
-                {
-                    good = false;
-                    break;
-                }
+
+        for (index_t col: component.cols) {
+            if (!addition.tryAddCol(col, getColumnVector(col))) {
+                good = false;
+                break;
             }
         }
 
-        if(good){
-            if(!component.rows.empty()){
-                auto result = addition.createComponentGraph(component.rows,component.cols);
-                if(!result.has_value()){
-                    throw std::logic_error("Aaah, what happened");
-                }
-                good = result->checkConnectedMatrix(transposed ? rowMatrix : problem.matrix,transposed ? component.rows : component.cols);
-            }
-        }
 		if(good){
 			validComponents.push_back(i);
 		}else{
 			invalidComponents.push_back(i);
 			addition.removeComponent(component.rows,component.cols);
+            ++numErasedComponents;
 		}
 	}
+    auto tMid = std::chrono::high_resolution_clock::now();
 
     index_t expandedColumns = 0;
 
@@ -702,42 +715,62 @@ Submatrix TUColumnSubmatrixFinder::computeNetworkSubmatrix(bool transposed,
                 colsInCurrentMatrix[col] = true;
             }
         }
-        SignAddition sca(problem.numRows(),problem.numCols(),colsInCurrentMatrix);
-        const auto& scaRowMat = rowMatrix;
-        const auto& scaColMat = problem.matrix;
+
 
         std::sort(candidates.begin(),candidates.end(),[](const ColCandidateData& first, const ColCandidateData& second){
-            return first.nonzeros > second.nonzeros;
-            if(first.nContinuousComponents == second.nContinuousComponents){
+            if(first.nonzeros == second.nonzeros){
                 return first.obj < second.obj;
             }
-            return first.nContinuousComponents < second.nContinuousComponents;
+            return first.nonzeros < second.nonzeros;
         });
 
-        for(index_t row = 0; row < problem.numRows(); ++row){
-            if(!addition.containsRow(row) && !extendedInvalidRows[row] )
-            {
-                bool good = addition.tryAddRow(row,MatrixSlice<EmptySlice>());
-                assert(good);
-            }
-
-        }
+        std::size_t triedAdditions = candidates.size();
         for(const auto& candidate : candidates){
             assert(problem.colType[candidate.column] != VariableType::CONTINUOUS);
-            if(addition.checkCol(candidate.column, getColumnVector(candidate.column)) &&
-               sca.tryAddColumn(scaRowMat,scaColMat,candidate.column)){
-                addition.addLastCheckedCol();
+            if(addition.tryAddCol(candidate.column, getColumnVector(candidate.column))){
                 ++expandedColumns;
             }
         }
     }
 
+    auto tEnd = std::chrono::high_resolution_clock::now();
 
     std::size_t contColumns = 0;
     for(const auto& component : validComponents){
         contColumns += components[component].cols.size();
     }
-//    std::cout<<"Network: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns"<<std::endl;
 
-    return addition.createSubmatrix(problem.numRows(),problem.numCols());
+    std::cout<<"Network: Continuous columns: "<< contColumns  <<", expanded with "<<expandedColumns<<" integral columns, total time: "
+    << (tEnd-tStart).count()/1e9<<" s, cont time: "<<(tMid-tStart).count()/1e9<<" s"
+    <<std::endl;
+
+    Submatrix matrix = addition.createSubmatrix(problem.numRows(),problem.numCols());
+
+    DetectionStatistics stats;
+    stats.method = transposed ? "transposed network addition" : "network addition";
+    stats.timeTaken = (tEnd-tStart).count() /1e9;
+    stats.numUpgraded = contColumns;
+    stats.numDowngraded= expandedColumns;
+
+    stats.numErasedComponents = numErasedComponents;
+
+    auto spqrStats = addition.statistics();
+    stats.numComponents = spqrStats.numComponents;
+    stats.numNodesTypeS = spqrStats.numSkeletonsTypeS;
+    stats.numNodesTypeP = spqrStats.numSkeletonsTypeP;
+    stats.numNodesTypeQ = spqrStats.numSkeletonsTypeQ;
+    stats.numNodesTypeR = spqrStats.numSkeletonsTypeR;
+    stats.largestRNumArcs = spqrStats.numArcsLargestR;
+    stats.numTotalRArcs = spqrStats.numArcsTotalR;
+
+    stats.numRows = matrix.rows.size();
+    stats.numColumns = matrix.columns.size();
+
+    detectionStatistics.push_back(stats);
+
+    return matrix;
+}
+
+std::vector<DetectionStatistics> TUColumnSubmatrixFinder::statistics() const {
+    return detectionStatistics;
 }

@@ -10,6 +10,24 @@
 #include "mipworkshop2024/presolve/PostSolveStack.h"
 #include <optional>
 
+struct DetectionStatistics {
+    std::string method;
+    double timeTaken;
+    std::size_t numUpgraded;
+    std::size_t numDowngraded;
+
+    std::size_t numErasedComponents;
+    std::size_t numComponents;
+    std::size_t numNodesTypeS;
+    std::size_t numNodesTypeP;
+    std::size_t numNodesTypeQ;
+    std::size_t numNodesTypeR;
+    std::size_t largestRNumArcs;
+    std::size_t numTotalRArcs;
+
+    std::size_t numRows;
+    std::size_t numColumns;
+};
 struct SolveStatistics
 {
 	std::string problemName;

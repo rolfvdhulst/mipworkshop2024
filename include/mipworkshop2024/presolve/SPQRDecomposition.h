@@ -48,11 +48,11 @@ typedef int spqr_element;
 
 bool elementIsRow(spqr_element element);
 bool elementIsColumn(spqr_element element);
-row_idx elementToRow(spqr_element element);
-col_idx elementToColumn(spqr_element element);
+spqr_row elementToRow(spqr_element element);
+spqr_col elementToColumn(spqr_element element);
 
-spqr_element rowToElement(row_idx row);
-spqr_element columnToElement(col_idx column);
+spqr_element rowToElement(spqr_row row);
+spqr_element columnToElement(spqr_col column);
 
 typedef struct{
     edge_id previous;
@@ -84,7 +84,6 @@ typedef enum {
     SERIES = 2, //Also known as 'polygon' or 'cycle'
 	LOOP = 3,
     UNASSIGNED = 4 // To indicate that the member has been merged/is not representative; this is just there to catch errors.
-
 } MemberType;
 
 typedef struct {
@@ -130,12 +129,12 @@ typedef struct {
 void changeLoopToSeries(Decomposition * dec, member_id member);
 void changeLoopToParallel(Decomposition * dec, member_id member);
 ////Section: Mapping functions for rows/columns
-bool decompositionHasRow(Decomposition *dec, row_idx row);
-bool decompositionHasCol(Decomposition *dec, col_idx col);
-void setDecompositionColumnEdge(Decomposition *dec, col_idx col, edge_id edge);
-void setDecompositionRowEdge(Decomposition *dec, row_idx row, edge_id edge);
-edge_id getDecompositionColumnEdge(const Decomposition *dec, col_idx col);
-edge_id getDecompositionRowEdge(const Decomposition *dec, row_idx row);
+bool decompositionHasRow(Decomposition *dec, spqr_row row);
+bool decompositionHasCol(Decomposition *dec, spqr_col col);
+void setDecompositionColumnEdge(Decomposition *dec, spqr_col col, edge_id edge);
+void setDecompositionRowEdge(Decomposition *dec, spqr_row row, edge_id edge);
+edge_id getDecompositionColumnEdge(const Decomposition *dec, spqr_col col);
+edge_id getDecompositionRowEdge(const Decomposition *dec, spqr_row row);
 //// Section: Disjoint union operations for nodes
 
 /**
@@ -276,8 +275,8 @@ void freeDecomposition(Decomposition ** dec);
 
 //Creation
 SPQR_ERROR createEdge(Decomposition * dec, member_id member, edge_id * pEdge);
-SPQR_ERROR createRowEdge(Decomposition *dec, member_id member, edge_id *pEdge, row_idx row);
-SPQR_ERROR createColumnEdge(Decomposition *dec, member_id member, edge_id *pEdge, col_idx col);
+SPQR_ERROR createRowEdge(Decomposition *dec, member_id member, edge_id *pEdge, spqr_row row);
+SPQR_ERROR createColumnEdge(Decomposition *dec, member_id member, edge_id *pEdge, spqr_col col);
 void addEdgeToMemberEdgeList(Decomposition *dec, edge_id edge, member_id member);
 void removeEdgeFromMemberEdgeList(Decomposition *dec, edge_id edge, member_id member);
 void moveEdgeToNewMember(Decomposition *dec, edge_id edge, member_id oldMember, member_id newMember);
@@ -297,10 +296,10 @@ void removeEmptyMember(Decomposition *dec,member_id member);
 int nodeDegree(Decomposition *dec, node_id node);
 
 //TODO: fix connected components interface somehow...
-SPQR_ERROR createStandaloneParallel(Decomposition *dec, col_idx * columns, int num_columns, row_idx row,member_id * pMember);
-SPQR_ERROR createConnectedParallel(Decomposition *dec, col_idx * columns, int num_columns, row_idx row, member_id * pMember);
-SPQR_ERROR createStandaloneSeries(Decomposition *dec, row_idx * rows, int numRows, col_idx col, member_id * pMember);
-SPQR_ERROR createConnectedSeries(Decomposition *dec, row_idx * rows, int numRows, col_idx col, member_id * pMember);
+SPQR_ERROR createStandaloneParallel(Decomposition *dec, spqr_col * columns, int num_columns, spqr_row row,member_id * pMember);
+SPQR_ERROR createConnectedParallel(Decomposition *dec, spqr_col * columns, int num_columns, spqr_row row, member_id * pMember);
+SPQR_ERROR createStandaloneSeries(Decomposition *dec, spqr_row * rows, int numRows, spqr_col col, member_id * pMember);
+SPQR_ERROR createConnectedSeries(Decomposition *dec, spqr_row * rows, int numRows, spqr_col col, member_id * pMember);
 
 void decreaseNumConnectedComponents(Decomposition *dec, int by);
 
@@ -313,7 +312,7 @@ SPQR_ERROR createMarkerPairWithReferences(Decomposition *dec, member_id parentMe
 void reorderComponent(Decomposition *dec, member_id newRoot);
 
 
-void removeComponents(Decomposition *dec,const row_idx * componentRows, size_t numRows,const col_idx  * componentCols, size_t numCols);
+void removeComponents(Decomposition *dec,const spqr_row * componentRows, size_t numRows,const spqr_col  * componentCols, size_t numCols);
 //Debugging
 void decompositionToDot(FILE * stream, const Decomposition *dec, bool useElementNames);
 
@@ -322,9 +321,9 @@ void decompositionToDot(FILE * stream, const Decomposition *dec, bool useElement
  * The resulting found rows are stored in the passed pointer.
  * @return the number of found rows stored in the given array
  */
-int decompositionGetFundamentalCycleRows(Decomposition *dec, col_idx column, row_idx * output);
+int decompositionGetFundamentalCycleRows(Decomposition *dec, spqr_col column, spqr_row * output);
 
-bool checkCorrectnessColumn(Decomposition * dec, col_idx column, row_idx * column_rows, int num_rows, row_idx * computed_column_storage);
+bool checkCorrectnessColumn(Decomposition * dec, spqr_col column, spqr_row * column_rows, int num_rows, spqr_row * computed_column_storage);
 
 bool checkDecompositionMinimal(Decomposition * dec);
 
