@@ -24,31 +24,65 @@ std::vector<DetectionStatistics> Presolver::findTUColumnSubmatrix(const TUSettin
     numDowngraded = 0;
 	TUColumnSubmatrixFinder finder(problem,settings);
 	auto submatrices = finder.computeTUSubmatrices();
-	for(const auto& submatrix : submatrices){
-
-#ifndef NDEBUG
-		for(const auto& column : submatrix.implyingColumns){
-			assert(problem.colType[column] == VariableType::INTEGER || problem.colType[column] == VariableType::BINARY);
-		}
-#endif
-		for(const auto& column : submatrix.submatColumns){
-            VariableType type = settings.writeType;
-            if(type == VariableType::INTEGER || type == VariableType::BINARY){
-                if(problem.lb[column] == 0.0 && problem.ub[column] == 1.0){
-                    type = VariableType::BINARY;
-                }else{
-                    type = VariableType::INTEGER;
-                }
-            }
-            if(problem.colType[column] == VariableType::CONTINUOUS){
+    for(const auto& submatrix : submatrices){
+        for(const auto& column : submatrix.submatColumns) {
+            if (problem.colType[column] == VariableType::CONTINUOUS) {
                 ++numUpgraded;
-            }else{
+            } else {
                 ++numDowngraded;
             }
-			problem.colType[column] = type;
-		}
-		stack.totallyUnimodularColumnSubmatrix(submatrix);
-	}
+        }
+    }
+
+    if(settings.dynamic){
+        double fractionDowngraded= double(numDowngraded) / double(problem.numCols());
+        if(numUpgraded == 0 && fractionDowngraded > 0.5){
+            std::cout<<"Do dynamic downgrading\n";
+            for(const auto& submatrix : submatrices){
+
+#ifndef NDEBUG
+                for(const auto& column : submatrix.implyingColumns){
+                    assert(problem.colType[column] == VariableType::INTEGER || problem.colType[column] == VariableType::BINARY);
+                }
+#endif
+                for(const auto& column : submatrix.submatColumns){
+                    VariableType type = settings.writeType;
+                    if(type == VariableType::INTEGER || type == VariableType::BINARY){
+                        if(problem.lb[column] == 0.0 && problem.ub[column] == 1.0){
+                            type = VariableType::BINARY;
+                        }else{
+                            type = VariableType::INTEGER;
+                        }
+                    }
+
+                    problem.colType[column] = type;
+                }
+                stack.totallyUnimodularColumnSubmatrix(submatrix);
+            }
+        }
+    }else{
+        for(const auto& submatrix : submatrices){
+
+#ifndef NDEBUG
+            for(const auto& column : submatrix.implyingColumns){
+                assert(problem.colType[column] == VariableType::INTEGER || problem.colType[column] == VariableType::BINARY);
+            }
+#endif
+            for(const auto& column : submatrix.submatColumns){
+                VariableType type = settings.writeType;
+                if(type == VariableType::INTEGER || type == VariableType::BINARY){
+                    if(problem.lb[column] == 0.0 && problem.ub[column] == 1.0){
+                        type = VariableType::BINARY;
+                    }else{
+                        type = VariableType::INTEGER;
+                    }
+                }
+
+                problem.colType[column] = type;
+            }
+            stack.totallyUnimodularColumnSubmatrix(submatrix);
+        }
+    }
 
     return finder.statistics();
 

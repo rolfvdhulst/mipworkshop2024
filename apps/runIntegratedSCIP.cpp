@@ -171,40 +171,48 @@ int main(int argc, char **argv) {
 	std::filesystem::path path(args[2]);
 
     std::vector<Configuration> configs = {
+//            Configuration{
+//                    .name = "b",
+//                    .settings = std::nullopt,
+//            },
+//            Configuration{
+//                    .name = "c",
+//                    .settings = TUSettings{
+//                            .doDowngrade = true,
+//                            .writeType = VariableType::IMPLIED_INTEGER,
+//                            .dynamic = false
+//                    }
+//            },
+//            Configuration{
+//                .name = "d",
+//                .settings = TUSettings{
+//                    .doDowngrade = false,
+//                    .writeType = VariableType::IMPLIED_INTEGER,
+//                    .dynamic = false
+//                }
+//            },
+//            Configuration{
+//                .name = "e",
+//                .settings = TUSettings{
+//                    .doDowngrade = true,
+//                    .writeType = VariableType::CONTINUOUS,
+//                    .dynamic = false
+//                }
+//            },
+//            Configuration{
+//                .name = "f",
+//                .settings = TUSettings{
+//                    .doDowngrade = false,
+//                    .writeType = VariableType::INTEGER,
+//                    .dynamic = false
+//                }
+//            },
             Configuration{
-                    .name = "b",
-                    .settings = std::nullopt,
-            },
-            Configuration{
-                    .name = "c",
-                    .settings = TUSettings{
-                            .doDowngrade = true,
-                            .writeType = VariableType::IMPLIED_INTEGER,
-                            .dynamic = false
-                    }
-            },
-            Configuration{
-                .name = "d",
-                .settings = TUSettings{
-                    .doDowngrade = false,
-                    .writeType = VariableType::IMPLIED_INTEGER,
-                    .dynamic = false
-                }
-            },
-            Configuration{
-                .name = "e",
+                .name = "g",
                 .settings = TUSettings{
                     .doDowngrade = true,
                     .writeType = VariableType::CONTINUOUS,
-                    .dynamic = false
-                }
-            },
-            Configuration{
-                .name = "f",
-                .settings = TUSettings{
-                    .doDowngrade = false,
-                    .writeType = VariableType::INTEGER,
-                    .dynamic = false
+                    .dynamic = true
                 }
             }
     };

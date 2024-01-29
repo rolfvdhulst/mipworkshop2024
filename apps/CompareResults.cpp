@@ -84,6 +84,44 @@ std::size_t gapCount(const std::vector<double>& numbers, double limit){
     return std::count_if(numbers.begin(),numbers.end(),[&](double value){ return value < limit;}
     );
 }
+
+int chooseToUpgrade(const SolveStatistics& contStats, const SolveStatistics& intStats, double frac){
+
+    std::size_t totalImpliedCont = contStats.numTUImpliedColumns;
+    std::size_t totalImpliedInt = intStats.numTUImpliedColumns;
+    std::size_t numDowngraded = totalImpliedCont - totalImpliedInt;
+    std::size_t numUpgraded = totalImpliedInt;
+    std::size_t totalColumns = contStats.numBinaryAfterPresolve + contStats.numIntBeforePresolve
+                             + contStats.numImpliedBeforePresolve + contStats.numContinuousBeforePresolve;
+    double fractionUpgraded = double(numUpgraded) / double(totalColumns);
+    double fractionDownGraded = double(numDowngraded) / double(totalColumns);
+
+    //0; do not use implied integers
+    //1: make all implied integers continuous variables
+    //2: make all implied integers integer variables
+
+    //intuition
+    //We want 1 if many integers can be turned into continuous variables
+
+    //Basically, downgrade to continuous only if no continuous variables can be upgraded e.g. we have a fully integer problem,
+    // AND many columns can be chosen
+
+
+    if(fractionUpgraded > 0.0){
+        return 0;
+    }
+    if(fractionDownGraded > 0.5){
+        return 1;
+    }
+    return 0;
+
+
+
+//    if(fractionDownGraded > 0.0 && fractionUpgraded > 0.0){
+//        return 1;
+//    }
+    return 0;
+}
 int main(int argc, char ** argv){
     std::vector<std::string> input(argv,argv+argc);
 
@@ -135,6 +173,7 @@ int main(int argc, char ** argv){
     std::vector<double> intNumImpliedAfterPresolve;
 
     for(const auto& pair : baseline){
+//        if( pair.first == "graph20-20-1rand") continue;
         //TODO: these instances have problems? (brazil3; bug reported, irish-electricity ? graph20-20-1rand?
         const auto& baseRes = pair.second;
         const auto& fullRes = full.at(pair.first);
@@ -256,108 +295,161 @@ int main(int argc, char ** argv){
     std::cout<<intImpliedAfterPresolveMean<<"\n";
 
 
-
-
-
-    for(const auto& pair : baseline){
-        const auto& baseRes = pair.second;
-        const auto& fullRes = full.at(pair.first);
-        const auto& partialRes = partial.at(pair.first);
-        const auto& contRes = toContOnly.at(pair.first);
-        const auto& intRes = toIntOnly.at(pair.first);
-        if(!baseRes.solveStatistics.has_value()){
-            std::cout<<"No results: "<<pair.first<<"\n";
-            continue;
-        }
-        const auto& baseStats = baseRes.solveStatistics.value();
-        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
-        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
-        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
-        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
-
-        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.timeTaken<<", "<<std::setw(8)<<fullStats.timeTaken<<", "
-                <<std::setw(8)<<partialStats.timeTaken<<", "<<std::setw(8)<<contStats.timeTaken<<", "<<std::setw(8)<<intStats.timeTaken<<"\n";
-    }
-
-    std::cout<<"\nGap for all instances\n";
-    for(const auto& pair : baseline){
-        const auto& baseRes = pair.second;
-        const auto& fullRes = full.at(pair.first);
-        const auto& partialRes = partial.at(pair.first);
-        const auto& contRes = toContOnly.at(pair.first);
-        const auto& intRes = toIntOnly.at(pair.first);
-        if(!baseRes.solveStatistics.has_value()){
-            std::cout<<"No results: "<<pair.first<<"\n";
-            continue;
-        }
-        const auto& baseStats = baseRes.solveStatistics.value();
-        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
-        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
-        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
-        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
-
-        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< absGap(baseStats)<<", "<<std::setw(8)<<absGap(fullStats)<<", "
-                 <<std::setw(8)<<absGap(partialStats)<<", "<<std::setw(8)<<absGap(contStats)<<", "<<std::setw(8)<<absGap(intStats)<<"\n";
-    }
     std::cout<<"\nScore for all instances\n";
-    for(const auto& pair : baseline){
-        const auto& baseRes = pair.second;
-        const auto& fullRes = full.at(pair.first);
-        const auto& partialRes = partial.at(pair.first);
-        const auto& contRes = toContOnly.at(pair.first);
-        const auto& intRes = toIntOnly.at(pair.first);
-        if(!baseRes.solveStatistics.has_value()){
-            std::cout<<"No results: "<<pair.first<<"\n";
-            continue;
+    double frac = 0.5;
+//    for(frac = 0.01; frac <= 1.0; frac += 0.01) {
+        std::vector<double> virtualScore;
+        for (const auto &pair: baseline) {
+//            if (pair.first == "graph20-20-1rand") continue;
+            const auto &baseRes = pair.second;
+            const auto &contRes = toContOnly.at(pair.first);
+            const auto &intRes = toIntOnly.at(pair.first);
+            if (!baseRes.solveStatistics.has_value()) {
+                std::cout << "No results: " << pair.first << "\n";
+                continue;
+            }
+            const auto &baseStats = baseRes.solveStatistics.value();
+            const auto &contStats = contRes.solveStatistics.value_or(baseStats);
+            const auto &intStats = intRes.solveStatistics.value_or(baseStats);
+
+            double baseVal = totalPrimalIntegral(baseStats);
+            double contVal = totalPrimalIntegral(contStats);
+            double intVal = totalPrimalIntegral(intStats);
+
+//        double bestVal = (baseVal < contVal ? baseVal : contVal);
+//        double bestVal = baseVal < std::min(contVal,intVal) ? baseVal : (contVal < intVal ? contVal : intVal);
+//        virtualScore.push_back(bestVal);
+
+            int bestIndex = baseVal < std::min(contVal, intVal) ? 0 : (contVal < intVal ? 1 : 2);
+
+            int chooseIndex = chooseToUpgrade(contStats, intStats, frac);
+            if (chooseIndex == 0) {
+                virtualScore.push_back(baseVal);
+            } else if (chooseIndex == 1) {
+                virtualScore.push_back(contVal);
+            } else {
+                virtualScore.push_back(intVal);
+            }
+            std::size_t totalImpliedCont = contStats.numTUImpliedColumns;
+            std::size_t totalImpliedInt = intStats.numTUImpliedColumns;
+            std::size_t numDowngraded = totalImpliedCont - totalImpliedInt;
+            std::size_t numUpgraded = totalImpliedInt;
+            std::size_t totalColumns = contStats.numBinaryAfterPresolve + contStats.numIntBeforePresolve
+                                       + contStats.numImpliedBeforePresolve + contStats.numContinuousBeforePresolve;
+            double fractionUpgraded = double(numUpgraded) / double(totalColumns);
+            double fractionDownGraded = double(numDowngraded) / double(totalColumns);
+            std::cout << std::setw(30) << pair.first << ": " << bestIndex << ", " << chooseIndex << ", " << std::setw(8)
+                      << totalPrimalIntegral(baseStats)
+                      << ", " << std::setw(8) << totalPrimalIntegral(contStats) << ", " << std::setw(8)
+                      << totalPrimalIntegral(intStats) << ", " << fractionDownGraded << ", " << fractionUpgraded
+                      << "\n";
         }
-        const auto& baseStats = baseRes.solveStatistics.value();
-        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
-        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
-        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
-        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
+        std::cout << "Score (Total PDI),frac: " << frac << "\n";
+        std::cout << baseScoreMean << ", " << contScoreMean << ", " << intScoreMean << ", "
+                  << shiftedGeometricMean(virtualScore, scoreShift) << "\n";
+//    }
 
-        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< totalPrimalIntegral(baseStats)<<", "<<std::setw(8)<<totalPrimalIntegral(fullStats)<<", "
-                 <<std::setw(8)<<totalPrimalIntegral(partialStats)<<", "<<std::setw(8)<<totalPrimalIntegral(contStats)<<", "<<std::setw(8)<<totalPrimalIntegral(intStats)<<"\n";
-    }
-    std::cout<<"\n Detection time for all instances\n";
-    for(const auto& pair : baseline){
-        const auto& baseRes = pair.second;
-        const auto& fullRes = full.at(pair.first);
-        const auto& partialRes = partial.at(pair.first);
-        const auto& contRes = toContOnly.at(pair.first);
-        const auto& intRes = toIntOnly.at(pair.first);
-        if(!baseRes.solveStatistics.has_value()){
-            std::cout<<"No results: "<<pair.first<<"\n";
-            continue;
-        }
-        const auto& baseStats = baseRes.solveStatistics.value();
-        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
-        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
-        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
-        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
 
-        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.TUDetectionTime<<", "<<std::setw(8)<<fullStats.TUDetectionTime<<", "
-                 <<std::setw(8)<<partialStats.TUDetectionTime<<", "<<std::setw(8)<<contStats.TUDetectionTime<<", "<<std::setw(8)<<intStats.TUDetectionTime<<"\n";
-    }
 
-    std::cout<<"\n Num implied after presolve for all instances\n";
-    for(const auto& pair : baseline){
-        const auto& baseRes = pair.second;
-        const auto& fullRes = full.at(pair.first);
-        const auto& partialRes = partial.at(pair.first);
-        const auto& contRes = toContOnly.at(pair.first);
-        const auto& intRes = toIntOnly.at(pair.first);
-        if(!baseRes.solveStatistics.has_value()){
-            std::cout<<"No results: "<<pair.first<<"\n";
-            continue;
-        }
-        const auto& baseStats = baseRes.solveStatistics.value();
-        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
-        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
-        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
-        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
-
-        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<fullStats.numImpliedAfterPresolve<<", "
-                 <<std::setw(8)<<partialStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<contStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<intStats.numImpliedAfterPresolve<<"\n";
-    }
+//    for(const auto& pair : baseline){
+//        const auto& baseRes = pair.second;
+//        const auto& fullRes = full.at(pair.first);
+//        const auto& partialRes = partial.at(pair.first);
+//        const auto& contRes = toContOnly.at(pair.first);
+//        const auto& intRes = toIntOnly.at(pair.first);
+//        if(!baseRes.solveStatistics.has_value()){
+//            std::cout<<"No results: "<<pair.first<<"\n";
+//            continue;
+//        }
+//        const auto& baseStats = baseRes.solveStatistics.value();
+//        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
+//        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
+//        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
+//        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
+//
+//        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.timeTaken<<", "<<std::setw(8)<<fullStats.timeTaken<<", "
+//                <<std::setw(8)<<partialStats.timeTaken<<", "<<std::setw(8)<<contStats.timeTaken<<", "<<std::setw(8)<<intStats.timeTaken<<"\n";
+//    }
+//
+//    std::cout<<"\nGap for all instances\n";
+//    for(const auto& pair : baseline){
+//        const auto& baseRes = pair.second;
+//        const auto& fullRes = full.at(pair.first);
+//        const auto& partialRes = partial.at(pair.first);
+//        const auto& contRes = toContOnly.at(pair.first);
+//        const auto& intRes = toIntOnly.at(pair.first);
+//        if(!baseRes.solveStatistics.has_value()){
+//            std::cout<<"No results: "<<pair.first<<"\n";
+//            continue;
+//        }
+//        const auto& baseStats = baseRes.solveStatistics.value();
+//        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
+//        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
+//        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
+//        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
+//
+//        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< absGap(baseStats)<<", "<<std::setw(8)<<absGap(fullStats)<<", "
+//                 <<std::setw(8)<<absGap(partialStats)<<", "<<std::setw(8)<<absGap(contStats)<<", "<<std::setw(8)<<absGap(intStats)<<"\n";
+//    }
+//    std::cout<<"\nScore for all instances\n";
+//    for(const auto& pair : baseline){
+//        const auto& baseRes = pair.second;
+//        const auto& fullRes = full.at(pair.first);
+//        const auto& partialRes = partial.at(pair.first);
+//        const auto& contRes = toContOnly.at(pair.first);
+//        const auto& intRes = toIntOnly.at(pair.first);
+//        if(!baseRes.solveStatistics.has_value()){
+//            std::cout<<"No results: "<<pair.first<<"\n";
+//            continue;
+//        }
+//        const auto& baseStats = baseRes.solveStatistics.value();
+//        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
+//        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
+//        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
+//        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
+//
+//        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< totalPrimalIntegral(baseStats)<<", "<<std::setw(8)<<totalPrimalIntegral(fullStats)<<", "
+//                 <<std::setw(8)<<totalPrimalIntegral(partialStats)<<", "<<std::setw(8)<<totalPrimalIntegral(contStats)<<", "<<std::setw(8)<<totalPrimalIntegral(intStats)<<"\n";
+//    }
+//    std::cout<<"\n Detection time for all instances\n";
+//    for(const auto& pair : baseline){
+//        const auto& baseRes = pair.second;
+//        const auto& fullRes = full.at(pair.first);
+//        const auto& partialRes = partial.at(pair.first);
+//        const auto& contRes = toContOnly.at(pair.first);
+//        const auto& intRes = toIntOnly.at(pair.first);
+//        if(!baseRes.solveStatistics.has_value()){
+//            std::cout<<"No results: "<<pair.first<<"\n";
+//            continue;
+//        }
+//        const auto& baseStats = baseRes.solveStatistics.value();
+//        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
+//        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
+//        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
+//        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
+//
+//        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.TUDetectionTime<<", "<<std::setw(8)<<fullStats.TUDetectionTime<<", "
+//                 <<std::setw(8)<<partialStats.TUDetectionTime<<", "<<std::setw(8)<<contStats.TUDetectionTime<<", "<<std::setw(8)<<intStats.TUDetectionTime<<"\n";
+//    }
+//
+//    std::cout<<"\n Num implied after presolve for all instances\n";
+//    for(const auto& pair : baseline){
+//        const auto& baseRes = pair.second;
+//        const auto& fullRes = full.at(pair.first);
+//        const auto& partialRes = partial.at(pair.first);
+//        const auto& contRes = toContOnly.at(pair.first);
+//        const auto& intRes = toIntOnly.at(pair.first);
+//        if(!baseRes.solveStatistics.has_value()){
+//            std::cout<<"No results: "<<pair.first<<"\n";
+//            continue;
+//        }
+//        const auto& baseStats = baseRes.solveStatistics.value();
+//        const auto& fullStats = fullRes.solveStatistics.value_or(baseStats);
+//        const auto& partialStats = partialRes.solveStatistics.value_or(baseStats);
+//        const auto& contStats = contRes.solveStatistics.value_or(baseStats);
+//        const auto& intStats = intRes.solveStatistics.value_or(baseStats);
+//
+//        std::cout<<std::setw(30)<<pair.first<<": "<<std::setw(8)<< baseStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<fullStats.numImpliedAfterPresolve<<", "
+//                 <<std::setw(8)<<partialStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<contStats.numImpliedAfterPresolve<<", "<<std::setw(8)<<intStats.numImpliedAfterPresolve<<"\n";
+//    }
 }
