@@ -120,6 +120,8 @@ bool processProblem(const Problem& problem, const std::filesystem::path& path, c
                 }
                 if (!problem.isFeasible(recovered.value())) {
                     std::cout << "Did not recover solution!\n";
+                    std::ofstream stream("/home/hulstrp/data/mipworkshop2024/debug.sol");
+                    solToStream(result->solution,stream);
                     return false;
                 }
                 convertedSol = recovered;
@@ -199,22 +201,22 @@ int main(int argc, char **argv) {
 //                    .dynamic = false
 //                }
 //            },
-//            Configuration{
-//                .name = "f",
-//                .settings = TUSettings{
-//                    .doDowngrade = false,
-//                    .writeType = VariableType::INTEGER,
-//                    .dynamic = false
-//                }
-//            },
             Configuration{
-                .name = "g",
+                .name = "f",
                 .settings = TUSettings{
-                    .doDowngrade = true,
-                    .writeType = VariableType::CONTINUOUS,
-                    .dynamic = true
+                    .doDowngrade = false,
+                    .writeType = VariableType::INTEGER,
+                    .dynamic = false
                 }
-            }
+            },
+//            Configuration{
+//                .name = "g",
+//                .settings = TUSettings{
+//                    .doDowngrade = true,
+//                    .writeType = VariableType::CONTINUOUS,
+//                    .dynamic = true
+//                }
+//            }
     };
 
     std::cout<<"Problem: "<<problem->name<<"\n";
