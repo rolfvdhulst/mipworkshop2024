@@ -20,21 +20,28 @@ void printInstanceString(const std::string &fullPath) {
 std::chrono::high_resolution_clock::time_point printStartString() {
     time_t now = time(nullptr);
     struct tm *tm = localtime(&now);
+    auto time = std::chrono::high_resolution_clock::now();
+    auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch());
+    std::size_t milliSeconds = sinceEpoch.count() % 1000;
     char s[64];
     size_t ret = strftime(s, sizeof(s), "%Y-%m-%dT%H:%M:%S", tm);
     assert(ret);
-    std::cout << "[START] " << s << "\n";
-    return std::chrono::high_resolution_clock::now();
+    std::cout << "[START] " <<  s << "."<< std::setw(3) << std::setfill('0')<< milliSeconds << "\n";
+    return time;
 }
 
 std::chrono::high_resolution_clock::time_point printEndString() {
+
     time_t now = time(nullptr);
     struct tm *tm = localtime(&now);
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto sinceEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(endTime.time_since_epoch());
+    std::size_t milliSeconds = sinceEpoch.count() % 1000;
     char s[64];
     size_t ret = strftime(s, sizeof(s), "%Y-%m-%dT%H:%M:%S", tm);
     assert(ret);
-    std::cout << "[END] " << s << "\n";
-    return std::chrono::high_resolution_clock::now();
+    std::cout << "[END] " << s << "."<< std::setw(3) << std::setfill('0')<< milliSeconds<<"\n";
+    return endTime;
 }
 
 bool doPresolve(const std::string &problemPath,
@@ -67,8 +74,9 @@ bool doPresolve(const std::string &problemPath,
     auto compStart = printStartString();
     Presolver presolver;
     presolver.doPresolve(problem, TUSettings{
-            .doDowngrade = true,
-            .writeType = VariableType::CONTINUOUS
+            .doDowngrade = false,
+            .writeType = VariableType::INTEGER,
+            .dynamic = false
     });
     auto compEnd = printEndString();
 
@@ -202,6 +210,7 @@ SCIP_RETCODE runSCIP(const std::string &problemPath, const std::string &solution
 
     /* include default SCIP plugins */
     SCIP_CALL(SCIPincludeDefaultPlugins(scip));
+    SCIPprintVersion(scip,stdout);
 
     SCIP_CALL(SCIPreadProb(scip, problemPath.c_str(), NULL));
 
